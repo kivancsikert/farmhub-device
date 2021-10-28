@@ -1,0 +1,25 @@
+{
+  "name": "device-base",
+  "version": "0.1.0",
+  "description": "Arduino device base services",
+  "keywords": "arduino json configuration mqtt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lptr/ArduinoJsonConfig"
+  },
+  "authors": [
+    {
+      "name": "Lóránt Pintér",
+      "url": "https://github.com/lptr"
+    }
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://lptr.github.io/ArduinoJsonConfig",
+  "dependencies": {
+    "bblanchon/ArduinoJson": "^6.18.3",
+    "256dpi/MQTT": "^2.5.0",
+    "rlogiacco/CircularBuffer": "^1.3.3"
+  },
+  "frameworks": "*",
+  "platforms": "*"
+}
