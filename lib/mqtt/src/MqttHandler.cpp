@@ -71,11 +71,6 @@ void MqttHandler::timedLoop() {
 }
 
 bool MqttHandler::tryConnect() {
-    if (!client->connected()) {
-        Serial.println("Couldn't connect to MQTT because network is down");
-        return false;
-    }
-
     Serial.printf("Connecting to MQTT at %s:%d", host.get().c_str(), port.get());
 
     // Lookup host name via MDNS explicitly
