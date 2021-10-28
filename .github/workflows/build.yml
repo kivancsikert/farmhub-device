@@ -25,6 +25,8 @@ jobs:
           pip install --upgrade platformio
       - name: Build application
         run: pio run
+      - name: Package library
+        run: pio package pack
   ready-to-merge:
     needs: build
     if: ${{ github.ref != 'refs/heads/main' }}
