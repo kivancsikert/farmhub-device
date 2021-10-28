@@ -1,8 +1,6 @@
 #include "MqttHandler.hpp"
 
-#include <ESPmDNS.h>
-
-namespace Mqtt {
+namespace devbase {
 
 MqttHandler::MqttHandler()
     : mqttClient(MQTT_BUFFER_SIZE)

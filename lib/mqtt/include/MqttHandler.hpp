@@ -4,6 +4,7 @@
 #include <ArduinoJsonConfig.hpp>
 #include <CircularBuffer.h>
 #include <Client.h>
+#include <ESPmDNS.h>
 #include <MQTT.h>
 #include <chrono>
 #include <functional>
@@ -11,10 +12,9 @@
 #define MQTT_BUFFER_SIZE 2048
 #define MQTT_QUEUED_MESSAGES_MAX 16
 
-using namespace ArduinoJsonConfig;
 using namespace std::chrono;
 
-namespace Mqtt {
+namespace devbase {
 
 struct MqttMessage {
     MqttMessage()

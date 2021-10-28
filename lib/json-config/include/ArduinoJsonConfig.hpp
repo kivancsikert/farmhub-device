@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <functional>
 #include <list>
@@ -9,7 +8,7 @@ using std::list;
 using std::ref;
 using std::reference_wrapper;
 
-namespace ArduinoJsonConfig {
+namespace devbase {
 
 class BaseProperty {
 public:
