@@ -1,3 +1,3 @@
-# device-base
+# FarmHub IoT client platform
 
-Arduino device base services
+Arduino base services for FarmHub client devices.

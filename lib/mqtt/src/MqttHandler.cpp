@@ -1,6 +1,6 @@
 #include "MqttHandler.hpp"
 
-namespace devbase {
+namespace farmhub { namespace client {
 
 MqttHandler::MqttHandler()
     : mqttClient(MQTT_BUFFER_SIZE)
@@ -139,4 +139,4 @@ bool MqttHandler::subscribe(const String& topic, int qos) {
     return success;
 }
 
-};
+}}    // namespace farmhub::client

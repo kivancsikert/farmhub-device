@@ -4,7 +4,7 @@
 #include <ArduinoJsonConfig.hpp>
 #include <MqttHandler.hpp>
 
-using namespace devbase;
+using namespace farmhub::client;
 
 WiFiClient wifiClient;
 

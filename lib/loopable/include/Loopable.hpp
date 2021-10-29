@@ -4,6 +4,8 @@
 
 using namespace std::chrono;
 
+namespace farmhub { namespace client {
+
 template <class T>
 class Loopable {
 public:
@@ -35,3 +37,5 @@ protected:
 private:
     time_point<system_clock> previousLoop;
 };
+
+}}    // namespace farmhub::client

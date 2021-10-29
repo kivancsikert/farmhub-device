@@ -8,7 +8,7 @@ using std::list;
 using std::ref;
 using std::reference_wrapper;
 
-namespace devbase {
+namespace farmhub { namespace client {
 
 class BaseProperty {
 public:
@@ -89,4 +89,5 @@ private:
 
     list<reference_wrapper<BaseProperty>> properties;
 };
-}
+
+}}    // namespace farmhub::client

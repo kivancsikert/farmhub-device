@@ -14,7 +14,7 @@
 
 using namespace std::chrono;
 
-namespace devbase {
+namespace farmhub { namespace client {
 
 struct MqttMessage {
     MqttMessage()
@@ -85,4 +85,4 @@ private:
     time_point<system_clock> previousLoop;
 };
 
-}
+}}    // namespace farmhub::client
