@@ -9,6 +9,8 @@
 #include <chrono>
 #include <functional>
 
+#include <Loopable.hpp>
+
 #define MQTT_BUFFER_SIZE 2048
 #define MQTT_QUEUED_MESSAGES_MAX 16
 
@@ -37,7 +39,8 @@ struct MqttMessage {
     int qos;
 };
 
-class MqttHandler {
+class MqttHandler
+    : public TimedLoopable<void> {
 public:
     MqttHandler();
 
@@ -50,17 +53,16 @@ public:
     bool publish(const String& topic, const JsonDocument& json, bool retained = false, int qos = 0);
     bool subscribe(const String& topic, int qos);
 
-    void loop() {
-        auto currentTime = system_clock::now();
-        if (currentTime - previousLoop > milliseconds { 500 }) {
-            previousLoop = currentTime;
-            timedLoop();
-        }
+protected:
+    void timedLoop() override;
+    milliseconds nextLoopAfter() const override {
+        return milliseconds { 500 };
+    }
+    void defaultValue() override {
     }
 
 private:
     bool tryConnect();
-    void timedLoop();
 
     Client* client;
     MQTTClient mqttClient;
@@ -81,8 +83,6 @@ private:
     static const int __minbackoff__ = 1000;      // minimum backoff, ms
     static const int __max_backoff__ = 60000;    // maximum backoff, ms
     static const int __jitter__ = 500;           // max random jitter, ms
-
-    time_point<system_clock> previousLoop;
 };
 
 }}    // namespace farmhub::client
