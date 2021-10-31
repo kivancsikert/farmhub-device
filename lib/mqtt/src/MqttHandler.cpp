@@ -15,12 +15,9 @@ MqttHandler::MqttHandler()
 }
 
 void MqttHandler::begin(
-    Client& client,
     const JsonObject& mqttConfig,
     std::function<void(const JsonObject&)> onConfigChange,
     std::function<void(const JsonObject&)> onCommand) {
-
-    this->client = &client;
 
     Serial.println("Initializing MQTT connector...");
     serializer.load(mqttConfig);

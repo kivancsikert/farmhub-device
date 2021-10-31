@@ -6,6 +6,7 @@
 #include <Client.h>
 #include <ESPmDNS.h>
 #include <MQTT.h>
+#include <WiFiClient.h>
 #include <chrono>
 #include <functional>
 
@@ -45,7 +46,6 @@ public:
     MqttHandler();
 
     void begin(
-        Client& client,
         const JsonObject& mqttConfig,
         std::function<void(const JsonObject&)> onConfigChange,
         std::function<void(const JsonObject&)> onCommand);
@@ -64,7 +64,7 @@ protected:
 private:
     bool tryConnect();
 
-    Client* client;
+    WiFiClient client;
     MQTTClient mqttClient;
 
     Property<String> host;
