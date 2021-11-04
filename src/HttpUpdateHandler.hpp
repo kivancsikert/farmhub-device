@@ -18,7 +18,7 @@ public:
     void begin() {
         mqtt.handleCommand("update", [this](const JsonObject& command) {
             if (!command.containsKey("url")) {
-                Serial.println("Command contains no key");
+                Serial.println("Command contains no URL");
                 return;
             }
             String url = command["url"];
