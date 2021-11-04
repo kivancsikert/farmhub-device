@@ -6,6 +6,7 @@
 #include <Client.h>
 #include <ESPmDNS.h>
 #include <MQTT.h>
+#include <WiFiClient.h>
 #include <chrono>
 #include <functional>
 
@@ -18,34 +19,12 @@ using namespace std::chrono;
 
 namespace farmhub { namespace client {
 
-struct MqttMessage {
-    MqttMessage()
-        : topic("")
-        , payload("")
-        , retain(false)
-        , qos(0) {
-    }
-
-    MqttMessage(const String& topic, const JsonDocument& payload, boolean retain, int qos)
-        : topic(topic)
-        , retain(retain)
-        , qos(qos) {
-        serializeJson(payload, this->payload);
-    }
-
-    String topic;
-    String payload;
-    boolean retain;
-    int qos;
-};
-
 class MqttHandler
     : public TimedLoopable<void> {
 public:
     MqttHandler();
 
     void begin(
-        Client& client,
         const JsonObject& mqttConfig,
         std::function<void(const JsonObject&)> onConfigChange,
         std::function<void(const JsonObject&)> onCommand);
@@ -64,7 +43,7 @@ protected:
 private:
     bool tryConnect();
 
-    Client* client;
+    WiFiClient client;
     MQTTClient mqttClient;
 
     Property<String> host;
@@ -75,14 +54,28 @@ private:
 
     bool connecting = false;
 
-    CircularBuffer<MqttMessage, MQTT_QUEUED_MESSAGES_MAX> publishQueue;
+    struct MqttMessage {
+        MqttMessage()
+            : topic("")
+            , payload("")
+            , retain(false)
+            , qos(0) {
+        }
 
-    // See https://cloud.google.com/iot/docs/how-tos/exponential-backoff
-    int __backoff__ = 1000;    // current backoff, milliseconds
-    static const int __factor__ = 2.5f;
-    static const int __minbackoff__ = 1000;      // minimum backoff, ms
-    static const int __max_backoff__ = 60000;    // maximum backoff, ms
-    static const int __jitter__ = 500;           // max random jitter, ms
+        MqttMessage(const String& topic, const JsonDocument& payload, boolean retain, int qos)
+            : topic(topic)
+            , retain(retain)
+            , qos(qos) {
+            serializeJson(payload, this->payload);
+        }
+
+        String topic;
+        String payload;
+        boolean retain;
+        int qos;
+    };
+
+    CircularBuffer<MqttMessage, MQTT_QUEUED_MESSAGES_MAX> publishQueue;
 };
 
 }}    // namespace farmhub::client
