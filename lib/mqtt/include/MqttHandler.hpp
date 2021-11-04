@@ -19,27 +19,6 @@ using namespace std::chrono;
 
 namespace farmhub { namespace client {
 
-struct MqttMessage {
-    MqttMessage()
-        : topic("")
-        , payload("")
-        , retain(false)
-        , qos(0) {
-    }
-
-    MqttMessage(const String& topic, const JsonDocument& payload, boolean retain, int qos)
-        : topic(topic)
-        , retain(retain)
-        , qos(qos) {
-        serializeJson(payload, this->payload);
-    }
-
-    String topic;
-    String payload;
-    boolean retain;
-    int qos;
-};
-
 class MqttHandler
     : public TimedLoopable<void> {
 public:
@@ -74,6 +53,27 @@ private:
     ConfigurationSerializer serializer;
 
     bool connecting = false;
+
+    struct MqttMessage {
+        MqttMessage()
+            : topic("")
+            , payload("")
+            , retain(false)
+            , qos(0) {
+        }
+
+        MqttMessage(const String& topic, const JsonDocument& payload, boolean retain, int qos)
+            : topic(topic)
+            , retain(retain)
+            , qos(qos) {
+            serializeJson(payload, this->payload);
+        }
+
+        String topic;
+        String payload;
+        boolean retain;
+        int qos;
+    };
 
     CircularBuffer<MqttMessage, MQTT_QUEUED_MESSAGES_MAX> publishQueue;
 
