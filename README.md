@@ -50,6 +50,8 @@ Basic configuration is provided in `BaseDeviceConfig` that can be extended by th
 ```
 
 If the `host` parameter is omitted, we'll try to look up the first MQTT server via mDNS.
+If we find a hit, we'll also use the port specified in mDNS.
+If there are multiple hits, the first one is used.
 
 ### Application configuration
 
