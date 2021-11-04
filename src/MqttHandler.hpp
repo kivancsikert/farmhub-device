@@ -42,7 +42,7 @@ public:
         Serial.println("Initializing MQTT connector...");
         serializer.load(mqttConfig);
 
-        Serial.printf("MQTT broker client ID is '%s', topic prefix is '%s'\n",
+        Serial.printf("MQTT client ID is '%s', topic prefix is '%s'\n",
             clientId.get().c_str(), prefix.get().c_str());
 
         String configTopic = String(prefix.get()) + "/config";
@@ -166,7 +166,7 @@ private:
             }
             address = MDNS.queryHost(mdnsHost);
         }
-        Serial.print("Connecting to MQTT at ");
+        Serial.print("Connecting to MQTT broker at ");
         if (address == IPAddress()) {
             Serial.printf("%s:%d", host.get().c_str(), port.get());
             mqttClient.setHost(host.get().c_str(), portNumber);
