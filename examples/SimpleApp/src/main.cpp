@@ -7,14 +7,27 @@
 #include <HttpUpdateHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
+#include <Telemetry.hpp>
 
 using namespace farmhub::client;
 
 const char* HOSTNAME = "simple-app";
 
+class SimpleTelemetryProvider : public TelemetryProvider {
+public:
+    void populateTelemetry(JsonObject& json) override {
+        json["counter"] = counter++;
+    }
+private:
+    unsigned int counter = 0;
+};
+
 OtaHandler ota;
 MqttHandler mqtt;
 HttpUpdateHandler httpUpdater(mqtt);
+
+SimpleTelemetryProvider telemetry;
+TelemetryPublisher telemetryPublisher(mqtt);
 
 void fatalError(String message) {
     Serial.println(message);
@@ -79,21 +92,19 @@ void setup() {
         serializeJsonPretty(json, Serial);
     });
     httpUpdater.begin();
+
+    telemetryPublisher.registerProvider(telemetry);
+    telemetryPublisher.begin();
 }
 
-int counter = 0;
+int iterations = 0;
 
 void loop() {
     ota.loop();
     mqtt.loop();
 
-    if (counter++ % 50 == 0) {
-        Serial.print("Sending message... ");
-        DynamicJsonDocument message(1024);
-        message["message"] = "Hello World";
-        message["counter"] = counter++;
-        auto success = mqtt.publish("hello", message);
-        Serial.println(success ? "OK" : "FAILED");
+    if (iterations++ % 50 == 0) {
+        telemetryPublisher.publish();
     }
 
     delay(100);
