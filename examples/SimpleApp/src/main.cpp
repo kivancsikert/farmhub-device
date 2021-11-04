@@ -13,11 +13,13 @@ using namespace farmhub::client;
 
 const char* HOSTNAME = "simple-app";
 
-class SimpleTelemetryProvider : public TelemetryProvider {
-public:
+class SimpleTelemetryProvider
+    : public TelemetryProvider {
+protected:
     void populateTelemetry(JsonObject& json) override {
         json["counter"] = counter++;
     }
+
 private:
     unsigned int counter = 0;
 };

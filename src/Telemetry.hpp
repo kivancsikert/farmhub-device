@@ -9,8 +9,9 @@
 namespace farmhub { namespace client {
 
 class TelemetryProvider {
-public:
+protected:
     virtual void populateTelemetry(JsonObject& json) = 0;
+    friend class TelemetryPublisher;
 };
 
 class TelemetryPublisher {
