@@ -4,6 +4,7 @@
 #include <WiFiManager.h>
 
 #include <ArduinoJsonConfig.hpp>
+#include <HttpUpdateHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 
@@ -11,8 +12,9 @@ using namespace farmhub::client;
 
 const char* HOSTNAME = "simple-app";
 
-OtaHandler otaHandler;
-MqttHandler mqttHandler;
+OtaHandler ota;
+MqttHandler mqtt;
+HttpUpdateHandler httpUpdater;
 
 void fatalError(String message) {
     Serial.println(message);
@@ -57,7 +59,7 @@ void setup() {
 
     WiFi.setHostname(HOSTNAME);
     MDNS.begin(HOSTNAME);
-    otaHandler.begin(HOSTNAME);
+    ota.begin(HOSTNAME);
 
     File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
     DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
@@ -66,30 +68,31 @@ void setup() {
         Serial.println(mqttConfigFile.readString());
         fatalError("Failed to read MQTT config file at /mqtt-config.json: " + String(error.c_str()));
     }
-    mqttHandler.begin(
+    mqtt.begin(
         mqttConfigJson.as<JsonObject>(),
         [](const JsonObject& json) {
             Serial.println("Received MQTT config");
             serializeJsonPretty(json, Serial);
         });
-    mqttHandler.handleCommand("greet", [](const JsonObject& json) {
-        Serial.println("Received greet command");
+    mqtt.handleCommand("echo", [](const JsonObject& json) {
+        Serial.println("Received echo command");
         serializeJsonPretty(json, Serial);
     });
+    httpUpdater.begin(mqtt);
 }
 
 int counter = 0;
 
 void loop() {
-    otaHandler.loop();
-    mqttHandler.loop();
+    ota.loop();
+    mqtt.loop();
 
-    if (counter++ % 10 == 0) {
+    if (counter++ % 50 == 0) {
         Serial.print("Sending message... ");
         DynamicJsonDocument message(1024);
         message["message"] = "Hello World";
         message["counter"] = counter++;
-        auto success = mqttHandler.publish("hello", message);
+        auto success = mqtt.publish("hello", message);
         Serial.println(success ? "OK" : "FAILED");
     }
 
