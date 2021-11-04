@@ -22,8 +22,8 @@ void MqttHandler::begin(
     Serial.println("Initializing MQTT connector...");
     serializer.load(mqttConfig);
 
-    Serial.printf("MQTT broker at '%s:%d', using client id '%s' (prefix: '%s')\n",
-        host.get().c_str(), port.get(), clientId.get().c_str(), prefix.get().c_str());
+    Serial.printf("MQTT broker client ID is '%s', topic prefix is '%s'\n",
+        clientId.get().c_str(), prefix.get().c_str());
 
     mqttClient.setKeepAlive(180);
     mqttClient.setCleanSession(true);
@@ -68,8 +68,6 @@ void MqttHandler::timedLoop() {
 }
 
 bool MqttHandler::tryConnect() {
-    Serial.printf("Connecting to MQTT at %s:%d", host.get().c_str(), port.get());
-
     // Lookup host name via MDNS explicitly
     // See https://github.com/kivancsikert/chicken-coop-door/issues/128
     String mdnsHost = host.get();
@@ -78,12 +76,16 @@ bool MqttHandler::tryConnect() {
     if (mdnsHost.isEmpty()) {
         auto count = MDNS.queryService("mqtt", "tcp");
         if (count > 0) {
-            Serial.println("Found MQTT services via MDNS, choosing first:\n");
+            Serial.println("Found MQTT services via mDNS, choosing first:");
             for (int i = 0; i < count; i++) {
-                Serial.printf("  - %s\n", MDNS.hostname(i).c_str());
+                Serial.printf("  %d) %s:%d (%s)\n",
+                    i + 1, MDNS.hostname(i).c_str(), MDNS.port(i), MDNS.IP(i).toString().c_str());
             }
             address = MDNS.IP(0);
             portNumber = (int) MDNS.port(0);
+        } else {
+            Serial.println("No MQTT services found via mDNS");
+            return false;
         }
     }
     if (address == IPAddress()) {
@@ -92,11 +94,12 @@ bool MqttHandler::tryConnect() {
         }
         address = MDNS.queryHost(mdnsHost);
     }
+    Serial.print("Connecting to MQTT at ");
     if (address == IPAddress()) {
-        Serial.print(" using the host name");
+        Serial.printf("%s:%d", host.get().c_str(), port.get());
         mqttClient.setHost(host.get().c_str(), portNumber);
     } else {
-        Serial.print(" using IP " + address.toString());
+        Serial.printf("%s:%d", address.toString().c_str(), port.get());
         mqttClient.setHost(address, portNumber);
     }
     Serial.print("...");
