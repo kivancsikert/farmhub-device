@@ -14,7 +14,7 @@ const char* HOSTNAME = "simple-app";
 
 OtaHandler ota;
 MqttHandler mqtt;
-HttpUpdateHandler httpUpdater;
+HttpUpdateHandler httpUpdater(mqtt);
 
 void fatalError(String message) {
     Serial.println(message);
@@ -78,7 +78,7 @@ void setup() {
         Serial.println("Received echo command");
         serializeJsonPretty(json, Serial);
     });
-    httpUpdater.begin(mqtt);
+    httpUpdater.begin();
 }
 
 int counter = 0;

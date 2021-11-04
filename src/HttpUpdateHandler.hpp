@@ -9,12 +9,13 @@ namespace farmhub { namespace client {
 
 class HttpUpdateHandler {
 public:
-    HttpUpdateHandler(const String& currentVersion = "UNKNOWN")
-        : currentVersion(currentVersion) {
+    HttpUpdateHandler(MqttHandler& mqtt, const String& currentVersion = "UNKNOWN")
+        : mqtt(mqtt)
+        , currentVersion(currentVersion) {
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     }
 
-    void begin(MqttHandler& mqtt) {
+    void begin() {
         mqtt.handleCommand("update", [this](const JsonObject& command) {
             if (!command.containsKey("url")) {
                 Serial.println("Command contains no key");
@@ -52,6 +53,7 @@ private:
         }
     }
 
+    MqttHandler& mqtt;
     const String currentVersion;
 };
 
