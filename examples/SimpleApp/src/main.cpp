@@ -68,8 +68,14 @@ void setup() {
     }
     mqttHandler.begin(
         mqttConfigJson.as<JsonObject>(),
-        [](const JsonObject& json) {},
-        [](const JsonObject& json) {});
+        [](const JsonObject& json) {
+            Serial.println("Received MQTT config");
+            serializeJsonPretty(json, Serial);
+        });
+    mqttHandler.handleCommand("greet", [](const JsonObject& json) {
+        Serial.println("Received greet command");
+        serializeJsonPretty(json, Serial);
+    });
 }
 
 int counter = 0;

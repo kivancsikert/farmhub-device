@@ -9,6 +9,7 @@
 #include <WiFiClient.h>
 #include <chrono>
 #include <functional>
+#include <list>
 
 #include <Loopable.hpp>
 
@@ -36,8 +37,7 @@ public:
 
     void begin(
         const JsonObject& mqttConfig,
-        std::function<void(const JsonObject&)> onConfigChange,
-        std::function<void(const JsonObject&)> onCommand) {
+        std::function<void(const JsonObject&)> onConfigChange) {
 
         Serial.println("Initializing MQTT connector...");
         serializer.load(mqttConfig);
@@ -45,19 +45,29 @@ public:
         Serial.printf("MQTT broker client ID is '%s', topic prefix is '%s'\n",
             clientId.get().c_str(), prefix.get().c_str());
 
+        String configTopic = String(prefix.get()) + "/config";
+        String commandTopicPrefix = String(prefix.get()) + "/commands/";
+
         mqttClient.setKeepAlive(180);
         mqttClient.setCleanSession(true);
         mqttClient.setTimeout(10000);
-        mqttClient.onMessage([onConfigChange, onCommand](String& topic, String& payload) {
+        mqttClient.onMessage([onConfigChange, configTopic, commandTopicPrefix, this](String& topic, String& payload) {
 #ifdef DUMP_MQTT
             Serial.println("Received '" + topic + "' (size: " + payload.length() + "): " + payload);
 #endif
             DynamicJsonDocument json(payload.length() * 2);
             deserializeJson(json, payload);
-            if (topic.endsWith("/config")) {
+            if (topic == configTopic) {
                 onConfigChange(json.as<JsonObject>());
-            } else if (topic.endsWith("/command")) {
-                onCommand(json.as<JsonObject>());
+            } else if (topic.startsWith(commandTopicPrefix)) {
+                auto command = topic.substring(commandTopicPrefix.length());
+                for (auto handler : commandHandlers) {
+                    if (handler.command == command) {
+                        handler.handle(json.as<JsonObject>());
+                        return;
+                    }
+                }
+                Serial.printf("Unknown command: '%s'\n", command.c_str());
             } else {
                 Serial.printf("Unknown topic: '%s'\n", topic.c_str());
             }
@@ -65,7 +75,7 @@ public:
         mqttClient.begin(client);
     }
 
-    bool publish(const String& topic, const JsonDocument& json, bool retained = false, int qos = 0) {
+    bool publish(const String& topic, const JsonDocument& json, bool retain = false, int qos = 0) {
         String fullTopic = prefix.get() + "/" + topic;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
@@ -92,6 +102,10 @@ public:
                 fullTopic.c_str(), mqttClient.lastError());
         }
         return success;
+    }
+
+    void handleCommand(const String command, std::function<void(const JsonObject&)> handle) {
+        commandHandlers.emplace_back(command, handle);
     }
 
 protected:
@@ -179,7 +193,7 @@ private:
         // Set QoS to 1 (ack) for configuration messages
         subscribe("config", 1);
         // QoS 0 (no ack) for commands
-        subscribe("command", 0);
+        subscribe("commands/+", 0);
         return true;
     }
 
@@ -193,6 +207,18 @@ private:
     ConfigurationSerializer serializer;
 
     bool connecting = false;
+
+    struct CommandHandler {
+        CommandHandler(const String& command, std::function<void(const JsonObject&)> handle)
+            : command(command)
+            , handle(handle) {
+        }
+
+        const String command;
+        const std::function<void(const JsonObject&)> handle;
+    };
+
+    std::list<CommandHandler> commandHandlers;
 
     struct MqttMessage {
         MqttMessage()
