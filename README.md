@@ -42,12 +42,14 @@ Basic configuration is provided in `BaseDeviceConfig` that can be extended by th
 
 ```jsonc
 {
-    "host": "mqtt.local", // broker host name
-    "port": 1883, // broker port
+    "host": "...", // broker host name
+    "port": 1883, // broker port, defaults to 1883
     "clientId": "chicken-door", // client ID
     "prefix": "devices/chicken-door" // topic prefix
 }
 ```
+
+If the `host` parameter is omitted, we'll try to look up the first MQTT server via mDNS.
 
 ### Application configuration
 

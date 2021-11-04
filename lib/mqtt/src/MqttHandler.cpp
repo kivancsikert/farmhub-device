@@ -4,7 +4,7 @@ namespace farmhub { namespace client {
 
 MqttHandler::MqttHandler()
     : mqttClient(MQTT_BUFFER_SIZE)
-    , host("host", "mqtt.local")
+    , host("host", "")
     , port("port", 1883)
     , clientId("clientId", "chicken-door")
     , prefix("prefix", "devices/chicken-door") {
@@ -73,16 +73,31 @@ bool MqttHandler::tryConnect() {
     // Lookup host name via MDNS explicitly
     // See https://github.com/kivancsikert/chicken-coop-door/issues/128
     String mdnsHost = host.get();
-    if (mdnsHost.endsWith(".local")) {
-        mdnsHost = mdnsHost.substring(0, mdnsHost.length() - 6);
+    int portNumber = port.get();
+    IPAddress address;
+    if (mdnsHost.isEmpty()) {
+        auto count = MDNS.queryService("mqtt", "tcp");
+        if (count > 0) {
+            Serial.println("Found MQTT services via MDNS, choosing first:\n");
+            for (int i = 0; i < count; i++) {
+                Serial.printf("  - %s\n", MDNS.hostname(i).c_str());
+            }
+            address = MDNS.IP(0);
+            portNumber = (int) MDNS.port(0);
+        }
     }
-    IPAddress address = MDNS.queryHost(mdnsHost);
+    if (address == IPAddress()) {
+        if (mdnsHost.endsWith(".local")) {
+            mdnsHost = mdnsHost.substring(0, mdnsHost.length() - 6);
+        }
+        address = MDNS.queryHost(mdnsHost);
+    }
     if (address == IPAddress()) {
         Serial.print(" using the host name");
-        mqttClient.setHost(host.get().c_str(), port.get());
+        mqttClient.setHost(host.get().c_str(), portNumber);
     } else {
         Serial.print(" using IP " + address.toString());
-        mqttClient.setHost(address, port.get());
+        mqttClient.setHost(address, portNumber);
     }
     Serial.print("...");
 
