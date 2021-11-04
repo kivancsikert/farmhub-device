@@ -30,13 +30,17 @@ public:
         providers.push_back(std::reference_wrapper<TelemetryProvider>(provider));
     }
 
+    void populate(JsonObject& json) {
+        for (auto& provider : providers) {
+            provider.get().populateTelemetry(json);
+        }
+    }
+
     void publish() {
         DynamicJsonDocument doc(2048);
         JsonObject root = doc.to<JsonObject>();
         root["uptime"] = millis();
-        for (auto& provider : providers) {
-            provider.get().populateTelemetry(root);
-        }
+        populate(root);
         mqtt.publish(topic, doc);
     }
 
