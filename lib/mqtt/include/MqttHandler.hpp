@@ -76,13 +76,6 @@ private:
     };
 
     CircularBuffer<MqttMessage, MQTT_QUEUED_MESSAGES_MAX> publishQueue;
-
-    // See https://cloud.google.com/iot/docs/how-tos/exponential-backoff
-    int __backoff__ = 1000;    // current backoff, milliseconds
-    static const int __factor__ = 2.5f;
-    static const int __minbackoff__ = 1000;      // minimum backoff, ms
-    static const int __max_backoff__ = 60000;    // maximum backoff, ms
-    static const int __jitter__ = 500;           // max random jitter, ms
 };
 
 }}    // namespace farmhub::client
