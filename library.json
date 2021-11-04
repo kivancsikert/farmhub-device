@@ -1,6 +1,6 @@
 {
   "name": "farmhub-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "FarmHub IoT client platform",
   "keywords": "arduino json configuration mqtt",
   "repository": {
