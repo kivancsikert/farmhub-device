@@ -5,11 +5,13 @@
 
 #include <ArduinoJsonConfig.hpp>
 #include <MqttHandler.hpp>
+#include <OtaHandler.hpp>
 
 using namespace farmhub::client;
 
 const char* HOSTNAME = "simple-app";
 
+OtaHandler otaHandler;
 MqttHandler mqttHandler;
 
 void fatalError(String message) {
@@ -55,6 +57,7 @@ void setup() {
 
     WiFi.setHostname(HOSTNAME);
     MDNS.begin(HOSTNAME);
+    otaHandler.begin(HOSTNAME);
 
     File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
     DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
@@ -72,6 +75,7 @@ void setup() {
 int counter = 0;
 
 void loop() {
+    otaHandler.loop();
     mqttHandler.loop();
 
     if (counter++ % 10 == 0) {
