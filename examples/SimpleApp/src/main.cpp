@@ -38,9 +38,30 @@ void fatalError(String message) {
     ESP.restart();
 }
 
+void beginFileSystem() {
+    Serial.println("Starting up file system...");
+    if (!SPIFFS.begin()) {
+        fatalError("Could not initialize file system");
+        return;
+    }
+
+    Serial.println("Contents:");
+    File root = SPIFFS.open("/", FILE_READ);
+    while (true) {
+        File file = root.openNextFile();
+        if (!file) {
+            break;
+        }
+        Serial.print(" - ");
+        Serial.println(file.name());
+    }
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println();
+
+    beginFileSystem();
 
     // Explicitly set mode, ESP defaults to STA+AP
     WiFi.mode(WIFI_STA);
