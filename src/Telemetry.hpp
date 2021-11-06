@@ -18,7 +18,7 @@ class TelemetryPublisher {
 public:
     TelemetryPublisher(
         MqttHandler& mqtt,
-        const String& topic = "events")
+        const String& topic = "telemetry")
         : mqtt(mqtt)
         , topic(topic) {
     }
