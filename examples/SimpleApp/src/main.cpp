@@ -104,6 +104,7 @@ void setup() {
     File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
     DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
     DeserializationError error = deserializeJson(mqttConfigJson, mqttConfigFile);
+    mqttConfigFile.close();
     if (error) {
         Serial.println(mqttConfigFile.readString());
         fatalError("Failed to read MQTT config file at /mqtt-config.json: " + String(error.c_str()));
