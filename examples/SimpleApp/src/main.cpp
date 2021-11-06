@@ -4,10 +4,12 @@
 #include <WiFiManager.h>
 
 #include <ArduinoJsonConfig.hpp>
-#include <commands/HttpUpdateCommand.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 #include <Telemetry.hpp>
+#include <commands/EchoCommand.hpp>
+#include <commands/FileCommands.hpp>
+#include <commands/HttpUpdateCommand.hpp>
 
 using namespace farmhub::client;
 
@@ -26,6 +28,9 @@ private:
 
 OtaHandler ota;
 MqttHandler mqtt;
+commands::EchoCommand echoCommand(mqtt);
+commands::FileCommands fileCommands(mqtt);
+commands::HttpUpdateCommand httpUpdateCommand(mqtt);
 
 SimpleTelemetryProvider telemetry;
 TelemetryPublisher telemetryPublisher(mqtt);
@@ -109,12 +114,6 @@ void setup() {
             Serial.println("Received MQTT config");
             serializeJsonPretty(json, Serial);
         });
-    mqtt.registerCommand("echo", [](const JsonObject& json) {
-        Serial.println("Received echo command");
-        serializeJsonPretty(json, Serial);
-    });
-
-    commands::HttpUpdateCommand::registerCommand(mqtt);
 
     telemetryPublisher.registerProvider(telemetry);
     telemetryPublisher.begin();
