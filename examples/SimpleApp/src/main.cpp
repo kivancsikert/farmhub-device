@@ -51,8 +51,8 @@ void beginFileSystem() {
         if (!file) {
             break;
         }
-        Serial.print(" - ");
-        Serial.println(file.name());
+        Serial.printf(" - %s (%d bytes)\n", file.name(), file.size());
+        file.close();
     }
 }
 
