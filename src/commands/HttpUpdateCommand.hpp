@@ -5,7 +5,7 @@
 
 #include <MqttHandler.hpp>
 
-namespace farmhub { namespace client {
+namespace farmhub { namespace client { namespace commands {
 
 class HttpUpdateCommand {
 public:
@@ -49,4 +49,4 @@ private:
     }
 };
 
-}}    // namespace farmhub::client
+}}}    // namespace farmhub::client::commands

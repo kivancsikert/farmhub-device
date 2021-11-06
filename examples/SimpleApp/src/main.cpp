@@ -4,7 +4,7 @@
 #include <WiFiManager.h>
 
 #include <ArduinoJsonConfig.hpp>
-#include <HttpUpdateCommand.hpp>
+#include <commands/HttpUpdateCommand.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 #include <Telemetry.hpp>
@@ -114,7 +114,7 @@ void setup() {
         serializeJsonPretty(json, Serial);
     });
 
-    HttpUpdateCommand::registerCommand(mqtt);
+    commands::HttpUpdateCommand::registerCommand(mqtt);
 
     telemetryPublisher.registerProvider(telemetry);
     telemetryPublisher.begin();
