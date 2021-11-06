@@ -200,7 +200,7 @@ private:
         // Set QoS to 1 (ack) for configuration messages
         subscribe("config", 1);
         // QoS 0 (no ack) for commands
-        subscribe("commands/+", 0);
+        subscribe("commands/#", 0);
         return true;
     }
 
