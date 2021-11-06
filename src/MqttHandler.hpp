@@ -90,6 +90,13 @@ public:
         return storedWithoutDropping;
     }
 
+    bool publish(const String& topic, std::function<void(JsonObject&)> populate, bool retain = false, int qos = 0, int size = MQTT_BUFFER_SIZE) {
+        DynamicJsonDocument doc(size);
+        JsonObject root = doc.to<JsonObject>();
+        populate(root);
+        return publish(topic, doc);
+    }
+
     bool subscribe(const String& topic, int qos) {
         if (!mqttClient.connected()) {
             return false;
