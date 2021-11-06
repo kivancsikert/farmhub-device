@@ -104,7 +104,7 @@ public:
         return success;
     }
 
-    void handleCommand(const String command, std::function<void(const JsonObject&)> handle) {
+    void registerCommand(const String command, std::function<void(const JsonObject&)> handle) {
         commandHandlers.emplace_back(command, handle);
     }
 
