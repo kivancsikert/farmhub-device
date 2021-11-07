@@ -6,6 +6,7 @@
 #include <MqttHandler.hpp>
 
 namespace farmhub { namespace client { namespace commands {
+
 class FileCommands {
 public:
     FileCommands(MqttHandler& mqtt)
