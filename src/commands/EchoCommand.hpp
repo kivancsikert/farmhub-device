@@ -9,7 +9,6 @@ public:
     EchoCommand(MqttHandler& mqtt)
         : mqtt(mqtt) {
         mqtt.registerCommand("echo", [&](const JsonObject& command) {
-            Serial.println("Received echo command");
             mqtt.publish("events/echo", [command](JsonObject& event) {
                 event["original"] = command;
             });
