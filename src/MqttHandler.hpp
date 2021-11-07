@@ -90,6 +90,13 @@ public:
         return storedWithoutDropping;
     }
 
+    bool publish(const String& topic, std::function<void(JsonObject&)> populate, bool retain = false, int qos = 0, int size = MQTT_BUFFER_SIZE) {
+        DynamicJsonDocument doc(size);
+        JsonObject root = doc.to<JsonObject>();
+        populate(root);
+        return publish(topic, doc);
+    }
+
     bool subscribe(const String& topic, int qos) {
         if (!mqttClient.connected()) {
             return false;
@@ -104,7 +111,7 @@ public:
         return success;
     }
 
-    void handleCommand(const String command, std::function<void(const JsonObject&)> handle) {
+    void registerCommand(const String command, std::function<void(const JsonObject&)> handle) {
         commandHandlers.emplace_back(command, handle);
     }
 
@@ -193,7 +200,7 @@ private:
         // Set QoS to 1 (ack) for configuration messages
         subscribe("config", 1);
         // QoS 0 (no ack) for commands
-        subscribe("commands/+", 0);
+        subscribe("commands/#", 0);
         return true;
     }
 

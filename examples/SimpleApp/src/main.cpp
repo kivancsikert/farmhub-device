@@ -4,10 +4,12 @@
 #include <WiFiManager.h>
 
 #include <ArduinoJsonConfig.hpp>
-#include <HttpUpdateHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 #include <Telemetry.hpp>
+#include <commands/EchoCommand.hpp>
+#include <commands/FileCommands.hpp>
+#include <commands/HttpUpdateCommand.hpp>
 
 using namespace farmhub::client;
 
@@ -26,7 +28,9 @@ private:
 
 OtaHandler ota;
 MqttHandler mqtt;
-HttpUpdateHandler httpUpdater(mqtt);
+commands::EchoCommand echoCommand(mqtt);
+commands::FileCommands fileCommands(mqtt);
+commands::HttpUpdateCommand httpUpdateCommand(mqtt);
 
 SimpleTelemetryProvider telemetry;
 TelemetryPublisher telemetryPublisher(mqtt);
@@ -52,8 +56,8 @@ void beginFileSystem() {
         if (!file) {
             break;
         }
-        Serial.print(" - ");
-        Serial.println(file.name());
+        Serial.printf(" - %s (%d bytes)\n", file.name(), file.size());
+        file.close();
     }
 }
 
@@ -100,6 +104,7 @@ void setup() {
     File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
     DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
     DeserializationError error = deserializeJson(mqttConfigJson, mqttConfigFile);
+    mqttConfigFile.close();
     if (error) {
         Serial.println(mqttConfigFile.readString());
         fatalError("Failed to read MQTT config file at /mqtt-config.json: " + String(error.c_str()));
@@ -110,11 +115,6 @@ void setup() {
             Serial.println("Received MQTT config");
             serializeJsonPretty(json, Serial);
         });
-    mqtt.handleCommand("echo", [](const JsonObject& json) {
-        Serial.println("Received echo command");
-        serializeJsonPretty(json, Serial);
-    });
-    httpUpdater.begin();
 
     telemetryPublisher.registerProvider(telemetry);
     telemetryPublisher.begin();

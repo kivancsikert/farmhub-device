@@ -5,18 +5,13 @@
 
 #include <MqttHandler.hpp>
 
-namespace farmhub { namespace client {
+namespace farmhub { namespace client { namespace commands {
 
-class HttpUpdateHandler {
+class HttpUpdateCommand {
 public:
-    HttpUpdateHandler(MqttHandler& mqtt, const String& currentVersion = "UNKNOWN")
-        : mqtt(mqtt)
-        , currentVersion(currentVersion) {
+    HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion = "UNKNOWN") {
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    }
-
-    void begin() {
-        mqtt.handleCommand("update", [this](const JsonObject& command) {
+        mqtt.registerCommand("update", [currentVersion](const JsonObject& command) {
             if (!command.containsKey("url")) {
                 Serial.println("Command contains no URL");
                 return;
@@ -26,12 +21,12 @@ public:
                 Serial.println("Command contains empty url");
                 return;
             }
-            update(url);
+            update(url, currentVersion);
         });
     }
 
 private:
-    void update(const String& url) {
+    static void update(const String& url, const String& currentVersion) {
         Serial.printf("Updating from version %s via URL %s\n", currentVersion.c_str(), url.c_str());
         WiFiClientSecure client;
         // Allow insecure connections for testing
@@ -52,9 +47,6 @@ private:
                 break;
         }
     }
-
-    MqttHandler& mqtt;
-    const String currentVersion;
 };
 
-}}    // namespace farmhub::client
+}}}    // namespace farmhub::client::commands
