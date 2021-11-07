@@ -10,6 +10,7 @@
 #include <commands/EchoCommand.hpp>
 #include <commands/FileCommands.hpp>
 #include <commands/HttpUpdateCommand.hpp>
+#include <commands/RestartCommand.hpp>
 
 using namespace farmhub::client;
 
@@ -31,6 +32,7 @@ MqttHandler mqtt;
 commands::EchoCommand echoCommand(mqtt);
 commands::FileCommands fileCommands(mqtt);
 commands::HttpUpdateCommand httpUpdateCommand(mqtt);
+commands::RestartCommand restartCommand(mqtt);
 
 SimpleTelemetryProvider telemetry;
 TelemetryPublisher telemetryPublisher(mqtt);
