@@ -61,6 +61,7 @@ public:
                 onConfigChange(json.as<JsonObject>());
             } else if (topic.startsWith(commandTopicPrefix)) {
                 auto command = topic.substring(commandTopicPrefix.length());
+                Serial.printf("Received command '%s'\n", command.c_str());
                 for (auto handler : commandHandlers) {
                     if (handler.command == command) {
                         handler.handle(json.as<JsonObject>());

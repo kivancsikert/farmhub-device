@@ -12,7 +12,6 @@ public:
     FileCommands(MqttHandler& mqtt)
         : mqtt(mqtt) {
         mqtt.registerCommand("files/list", [&](const JsonObject& command) {
-            Serial.println("Listing file system");
             mqtt.publish("events/files/list", [](JsonObject& event) {
                 File root = SPIFFS.open("/", FILE_READ);
                 JsonArray files = event.createNestedArray("files");
