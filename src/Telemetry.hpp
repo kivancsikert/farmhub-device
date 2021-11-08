@@ -23,9 +23,6 @@ public:
         , topic(topic) {
     }
 
-    void begin() {
-    }
-
     void registerProvider(TelemetryProvider& provider) {
         providers.push_back(std::reference_wrapper<TelemetryProvider>(provider));
     }
