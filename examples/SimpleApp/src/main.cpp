@@ -7,8 +7,6 @@
 
 using namespace farmhub::client;
 
-const char* HOSTNAME = "simple-app";
-
 class SimpleTelemetryProvider
     : public TelemetryProvider {
 protected:
@@ -28,7 +26,7 @@ public:
     }
 
 protected:
-    void beginApp() override {
+    void beginWifi() override {
         // Explicitly set mode, ESP defaults to STA+AP
         WiFi.mode(WIFI_STA);
 
@@ -54,13 +52,9 @@ protected:
         if (!wm.autoConnect()) {
             fatalError("Failed to connect to WIFI");
         }
+    }
 
-        WiFi.setHostname(HOSTNAME);
-        MDNS.begin(HOSTNAME);
-        ota.begin(HOSTNAME);
-
-        mqtt.begin();
-
+    void beginApp() override {
         telemetryPublisher.registerProvider(telemetry);
     }
 
@@ -88,7 +82,7 @@ private:
 SimpleApp app;
 
 void setup() {
-    app.begin();
+    app.begin("simple-app");
 }
 
 void loop() {

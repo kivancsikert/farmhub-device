@@ -16,11 +16,16 @@ namespace farmhub { namespace client {
 
 class Application {
 public:
-    void begin() {
+    void begin(const String& hostname) {
         Serial.begin(115200);
-        Serial.printf("\nStarting %s version %s\n", name.c_str(), version.c_str());
+        Serial.printf("\nStarting %s version %s with hostname %s\n", name.c_str(), version.c_str(), hostname.c_str());
 
         beginFileSystem();
+        beginWifi();
+
+        WiFi.setHostname(hostname.c_str());
+        ota.begin(hostname);
+        mqtt.begin();
 
         beginApp();
     }
@@ -54,6 +59,8 @@ protected:
     commands::FileCommands fileCommands;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
+
+    virtual void beginWifi() = 0;
 
     virtual void beginApp() {
     }

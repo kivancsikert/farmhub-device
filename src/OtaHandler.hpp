@@ -14,8 +14,9 @@ public:
     OtaHandler() {
     }
 
-    void begin(const char* hostname) {
-        ArduinoOTA.setHostname(hostname);
+    void begin(const String& hostname) {
+        ArduinoOTA.setHostname(hostname.c_str());
+        ArduinoOTA.setMdnsEnabled(true);
 
         ArduinoOTA.onStart([]() {
             Serial.println("Start");
