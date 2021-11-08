@@ -23,42 +23,6 @@ protected:
     const char* name;
 };
 
-template <typename T>
-class Property : public BaseProperty {
-public:
-    Property(const char* name, const T& value, const bool secret = false)
-        : BaseProperty(name)
-        , secret(secret)
-        , value(value) {
-    }
-
-    void set(const T& value) const {
-        this->value = value;
-    }
-
-    const T& get() const {
-        return value;
-    }
-
-    void load(const JsonObject& json) override {
-        if (json.containsKey(name)) {
-            value = json[name].as<T>();
-        }
-    }
-
-    void store(JsonObject& json, bool maskSecrets) const override {
-        if (maskSecrets && secret) {
-            json[name] = "********";
-        } else {
-            json[name] = value;
-        }
-    }
-
-private:
-    const bool secret;
-    T value;
-};
-
 class ConfigurationSerializer {
 public:
     void add(BaseProperty& property) {
@@ -88,6 +52,43 @@ private:
     }
 
     list<reference_wrapper<BaseProperty>> properties;
+};
+
+template <typename T>
+class Property : public BaseProperty {
+public:
+    Property(ConfigurationSerializer& serializer, const char* name, const T& value, const bool secret = false)
+        : BaseProperty(name)
+        , secret(secret)
+        , value(value) {
+        serializer.add(*this);
+    }
+
+    void set(const T& value) const {
+        this->value = value;
+    }
+
+    const T& get() const {
+        return value;
+    }
+
+    void load(const JsonObject& json) override {
+        if (json.containsKey(name)) {
+            value = json[name].as<T>();
+        }
+    }
+
+    void store(JsonObject& json, bool maskSecrets) const override {
+        if (maskSecrets && secret) {
+            json[name] = "********";
+        } else {
+            json[name] = value;
+        }
+    }
+
+private:
+    const bool secret;
+    T value;
 };
 
 class Configuration {

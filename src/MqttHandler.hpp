@@ -198,14 +198,10 @@ private:
     public:
         MqttConfig()
             : Configuration()
-            , host("host", "")
-            , port("port", 1883)
-            , clientId("clientId", "")
-            , topic("prefix", "") {
-            serializer.add(host);
-            serializer.add(port);
-            serializer.add(clientId);
-            serializer.add(topic);
+            , host(serializer, "host", "")
+            , port(serializer, "port", 1883)
+            , clientId(serializer, "clientId", "")
+            , topic(serializer, "prefix", "") {
         }
 
         void begin() {
