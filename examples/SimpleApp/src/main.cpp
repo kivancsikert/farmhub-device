@@ -1,9 +1,8 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <WiFiManager.h>
 
 #include <Application.hpp>
 #include <Telemetry.hpp>
+#include <wifi/WiFiManagerProvider.hpp>
 
 using namespace farmhub::client;
 
@@ -21,39 +20,11 @@ private:
 class SimpleApp : public Application {
 public:
     SimpleApp()
-        : Application("SimpleApp", "UNKNOWN")
+        : Application("SimpleApp", "UNKNOWN", wifiProvider)
         , telemetryPublisher(mqtt) {
     }
 
 protected:
-    void beginWifi() override {
-        // Explicitly set mode, ESP defaults to STA+AP
-        WiFi.mode(WIFI_STA);
-
-        WiFiManager wm;
-
-        // Reset settings - wipe stored credentials for testing;
-        // these are stored by the ESP library
-        //wm.resetSettings();
-
-        // Allow some time for connecting to the WIFI, otherwise
-        // open configuration portal
-        wm.setConnectTimeout(20);
-
-        // Close the configuration portal after some time and reboot
-        // if no WIFI is configured in that time
-        wm.setConfigPortalTimeout(300);
-
-        // Automatically connect using saved credentials,
-        // if connection fails, it starts an access point
-        // with an auto-generated SSID and no password,
-        // then goes into a blocking loop awaiting
-        // configuration and will return success result.
-        if (!wm.autoConnect()) {
-            fatalError("Failed to connect to WIFI");
-        }
-    }
-
     void beginApp() override {
         telemetryPublisher.registerProvider(telemetry);
     }
@@ -73,6 +44,7 @@ protected:
     }
 
 private:
+    WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
     TelemetryPublisher telemetryPublisher;
 

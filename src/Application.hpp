@@ -11,6 +11,7 @@
 #include <commands/FileCommands.hpp>
 #include <commands/HttpUpdateCommand.hpp>
 #include <commands/RestartCommand.hpp>
+#include <wifi/WiFiProvider.hpp>
 
 namespace farmhub { namespace client {
 
@@ -21,7 +22,7 @@ public:
         Serial.printf("\nStarting %s version %s with hostname %s\n", name.c_str(), version.c_str(), hostname.c_str());
 
         beginFileSystem();
-        beginWifi();
+        wifiProvider.begin();
 
         WiFi.setHostname(hostname.c_str());
         ota.begin(hostname);
@@ -38,9 +39,10 @@ public:
     }
 
 protected:
-    Application(const String& name, const String& version)
+    Application(const String& name, const String& version, WiFiProvider& wifiProvider)
         : name(name)
         , version(version)
+        , wifiProvider(wifiProvider)
         , mqtt([&](const JsonObject& config) { configurationUpdated(config); })
         , echoCommand(mqtt)
         , fileCommands(mqtt)
@@ -53,14 +55,14 @@ protected:
 
     const String name;
     const String version;
+    WiFiProvider& wifiProvider;
+
     OtaHandler ota;
     MqttHandler mqtt;
     commands::EchoCommand echoCommand;
     commands::FileCommands fileCommands;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-
-    virtual void beginWifi() = 0;
 
     virtual void beginApp() {
     }
