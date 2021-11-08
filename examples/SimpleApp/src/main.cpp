@@ -1,9 +1,9 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiManager.h>
 
 #include <Application.hpp>
 #include <Telemetry.hpp>
-#include <WiFi.h>
-#include <WiFiManager.h>
 
 using namespace farmhub::client;
 
