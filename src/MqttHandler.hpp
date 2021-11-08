@@ -11,20 +11,23 @@
 #include <functional>
 #include <list>
 
-#include <Loopable.hpp>
+#include <Task.hpp>
 
 #define MQTT_BUFFER_SIZE 2048
 #define MQTT_QUEUED_MESSAGES_MAX 16
+#define MQTT_TIMEOUT 500
+#define MQTT_POLL_FREQUENCY 1000
 
 using namespace std::chrono;
 
 namespace farmhub { namespace client {
 
 class MqttHandler
-    : public TimedLoopable<void> {
+    : public Task {
 public:
     MqttHandler(const std::function<void(const JsonObject&)> onAppConfigChange)
-        : mqttClient(MQTT_BUFFER_SIZE)
+        : Task("MQTT")
+        , mqttClient(MQTT_BUFFER_SIZE)
         , onAppConfigChange(onAppConfigChange) {
     }
 
@@ -40,7 +43,7 @@ public:
 
         mqttClient.setKeepAlive(180);
         mqttClient.setCleanSession(true);
-        mqttClient.setTimeout(10000);
+        mqttClient.setTimeout(MQTT_TIMEOUT);
         mqttClient.onMessage([appConfigTopic, commandTopicPrefix, this](String& topic, String& payload) {
 #ifdef DUMP_MQTT
             Serial.println("Received '" + topic + "' (size: " + payload.length() + "): " + payload);
@@ -107,10 +110,11 @@ public:
     }
 
 protected:
-    void timedLoop() override {
+    milliseconds loop(time_point<system_clock> now) override {
         if (!mqttClient.connected()) {
             if (!tryConnect()) {
-                return;
+                // Try connecting again in 10 seconds
+                return seconds { 10 };
             }
         }
 
@@ -127,13 +131,7 @@ protected:
         }
 
         mqttClient.loop();
-    }
-
-    milliseconds nextLoopAfter() const override {
-        return milliseconds { 500 };
-    }
-
-    void defaultValue() override {
+        return milliseconds { MQTT_POLL_FREQUENCY };
     }
 
 private:

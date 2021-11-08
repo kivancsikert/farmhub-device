@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <Application.hpp>
+#include <Task.hpp>
 #include <Telemetry.hpp>
 #include <wifi/WiFiManagerProvider.hpp>
 
@@ -17,11 +18,27 @@ private:
     unsigned int counter = 0;
 };
 
+class SimpleUptimeTask
+    : public Task {
+public:
+    SimpleUptimeTask()
+        : Task("Hello") {
+    }
+
+    milliseconds loop(time_point<system_clock> now) override {
+        Serial.printf("Simple app has been running for %ld seconds\n",
+            (long) duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
+        return seconds { 1 };
+    }
+};
+
 class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", wifiProvider)
-        , telemetryPublisher(mqtt) {
+        , telemetryPublisher(mqtt, seconds { 5 }) {
+        addTask(telemetryPublisher);
+        addTask(uptimeTask);
     }
 
 protected:
@@ -35,18 +52,11 @@ protected:
         Serial.println();
     }
 
-    void loopApp() override {
-        if (iterations++ % 50 == 0) {
-            telemetryPublisher.publish();
-        }
-
-        delay(100);
-    }
-
 private:
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
     TelemetryPublisher telemetryPublisher;
+    SimpleUptimeTask uptimeTask;
 
     int iterations = 0;
 };

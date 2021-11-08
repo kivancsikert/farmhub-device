@@ -23,8 +23,8 @@ public:
 
         beginFileSystem();
         wifiProvider.begin();
-
         WiFi.setHostname(hostname.c_str());
+        MDNS.begin(hostname.c_str());
         ota.begin(hostname);
         mqtt.begin();
 
@@ -32,10 +32,7 @@ public:
     }
 
     void loop() {
-        ota.loop();
-        mqtt.loop();
-
-        loopApp();
+        tasks.loop();
     }
 
 protected:
@@ -48,6 +45,13 @@ protected:
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
         , restartCommand(mqtt) {
+
+        addTask(ota);
+        addTask(mqtt);
+    }
+
+    void addTask(Task& task) {
+        tasks.add(task);
     }
 
     virtual void configurationUpdated(const JsonObject& config) {
@@ -67,10 +71,9 @@ protected:
     virtual void beginApp() {
     }
 
-    virtual void loopApp() {
-    }
-
 private:
+    TaskContainer tasks;
+
     void beginFileSystem() {
         Serial.print("Starting file system... ");
         if (!SPIFFS.begin()) {
