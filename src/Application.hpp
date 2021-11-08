@@ -36,10 +36,14 @@ protected:
     Application(const String& name, const String& version)
         : name(name)
         , version(version)
+        , mqtt([&](const JsonObject& config) { configurationUpdated(config); })
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
         , restartCommand(mqtt) {
+    }
+
+    virtual void configurationUpdated(const JsonObject& config) {
     }
 
     const String name;

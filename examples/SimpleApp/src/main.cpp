@@ -63,12 +63,15 @@ protected:
         MDNS.begin(HOSTNAME);
         ota.begin(HOSTNAME);
 
-        mqtt.begin([](const JsonObject& json) {
-            Serial.println("Received MQTT config");
-            serializeJsonPretty(json, Serial);
-        });
+        mqtt.begin();
 
         telemetryPublisher.registerProvider(telemetry);
+    }
+
+    void configurationUpdated(const JsonObject& json) override {
+        Serial.println("Received MQTT config");
+        serializeJsonPretty(json, Serial);
+        Serial.println();
     }
 
     void loopApp() override {

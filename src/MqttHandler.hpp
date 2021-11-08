@@ -23,11 +23,12 @@ namespace farmhub { namespace client {
 class MqttHandler
     : public TimedLoopable<void> {
 public:
-    MqttHandler()
-        : mqttClient(MQTT_BUFFER_SIZE) {
+    MqttHandler(const std::function<void(const JsonObject&)> onAppConfigChange)
+        : mqttClient(MQTT_BUFFER_SIZE)
+        , onAppConfigChange(onAppConfigChange) {
     }
 
-    void begin(std::function<void(const JsonObject&)> onConfigChange) {
+    void begin() {
         Serial.println("Initializing MQTT connector...");
         config.begin();
 
@@ -40,14 +41,14 @@ public:
         mqttClient.setKeepAlive(180);
         mqttClient.setCleanSession(true);
         mqttClient.setTimeout(10000);
-        mqttClient.onMessage([onConfigChange, appConfigTopic, commandTopicPrefix, this](String& topic, String& payload) {
+        mqttClient.onMessage([appConfigTopic, commandTopicPrefix, this](String& topic, String& payload) {
 #ifdef DUMP_MQTT
             Serial.println("Received '" + topic + "' (size: " + payload.length() + "): " + payload);
 #endif
             DynamicJsonDocument json(payload.length() * 2);
             deserializeJson(json, payload);
             if (topic == appConfigTopic) {
-                onConfigChange(json.as<JsonObject>());
+                onAppConfigChange(json.as<JsonObject>());
             } else if (topic.startsWith(commandTopicPrefix)) {
                 auto command = topic.substring(commandTopicPrefix.length());
                 Serial.printf("Received command '%s'\n", command.c_str());
@@ -242,6 +243,7 @@ private:
     WiFiClient client;
     MQTTClient mqttClient;
     MqttConfig config;
+    const std::function<void(const JsonObject&)> onAppConfigChange;
 
     bool connecting = false;
 
