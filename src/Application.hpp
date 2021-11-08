@@ -17,7 +17,7 @@ class Application {
 public:
     void begin() {
         Serial.begin(115200);
-        Serial.println();
+        Serial.printf("\nStarting %s version %s\n", name.c_str(), version.c_str());
 
         beginFileSystem();
 
@@ -32,8 +32,9 @@ public:
     }
 
 protected:
-    Application(const String& version)
-        : version(version)
+    Application(const String& name, const String& version)
+        : name(name)
+        , version(version)
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
@@ -47,6 +48,7 @@ protected:
         ESP.restart();
     }
 
+    const String name;
     const String version;
     OtaHandler ota;
     MqttHandler mqtt;
@@ -63,7 +65,7 @@ protected:
 
 private:
     void beginFileSystem() {
-        Serial.println("Starting up file system...");
+        Serial.println("Starting file system...");
         if (!SPIFFS.begin()) {
             fatalError("Could not initialize file system");
             return;

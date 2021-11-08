@@ -23,7 +23,7 @@ private:
 class SimpleApp : public Application {
 public:
     SimpleApp()
-        : Application("UNKNOWN")
+        : Application("SimpleApp", "UNKNOWN")
         , telemetryPublisher(mqtt) {
     }
 
