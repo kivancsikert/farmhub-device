@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 
 #include <ArduinoJsonConfig.hpp>
+#include <Farmhub.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 #include <commands/EchoCommand.hpp>
@@ -39,13 +40,6 @@ protected:
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
         , restartCommand(mqtt) {
-    }
-
-    void fatalError(String message) {
-        Serial.println(message);
-        Serial.flush();
-        delay(10000);
-        ESP.restart();
     }
 
     const String name;
