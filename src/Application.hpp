@@ -70,13 +70,13 @@ protected:
 
 private:
     void beginFileSystem() {
-        Serial.println("Starting file system...");
+        Serial.print("Starting file system... ");
         if (!SPIFFS.begin()) {
             fatalError("Could not initialize file system");
             return;
         }
 
-        Serial.println("Contents:");
+        Serial.println("contents:");
         File root = SPIFFS.open("/", FILE_READ);
         while (true) {
             File file = root.openNextFile();
