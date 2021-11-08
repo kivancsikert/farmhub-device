@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 
-#include <ArduinoJsonConfig.hpp>
+#include <Configuration.hpp>
 #include <Farmhub.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>

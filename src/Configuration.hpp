@@ -90,4 +90,12 @@ private:
     list<reference_wrapper<BaseProperty>> properties;
 };
 
+class Configuration {
+public:
+    Configuration() = default;
+
+protected:
+    ConfigurationSerializer serializer;
+};
+
 }}    // namespace farmhub::client
