@@ -55,10 +55,6 @@ protected:
             fatalError("Failed to connect to WIFI");
         }
 
-        if (!SPIFFS.begin()) {
-            fatalError("Could not initialize file system");
-        }
-
         WiFi.setHostname(HOSTNAME);
         MDNS.begin(HOSTNAME);
         ota.begin(HOSTNAME);
