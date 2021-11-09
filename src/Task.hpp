@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <chrono>
 #include <functional>
+#include <list>
 
 using namespace std::chrono;
 
@@ -157,7 +158,7 @@ private:
         time_point<system_clock> next;
     };
 
-    list<TaskEntry> tasks;
+    std::list<TaskEntry> tasks;
 };
 
 }}    // namespace farmhub::client
