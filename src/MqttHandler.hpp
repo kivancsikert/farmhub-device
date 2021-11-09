@@ -6,7 +6,7 @@
 #include <Configuration.hpp>
 #include <ESPmDNS.h>
 #include <MQTT.h>
-#include <WiFiClient.h>
+#include <WiFi.h>
 #include <chrono>
 #include <functional>
 #include <list>
@@ -111,6 +111,10 @@ public:
 
 protected:
     const Schedule loop(time_point<system_clock> now) override {
+        if (WiFi.status() != WL_CONNECTED) {
+            return repeatAsapAfter(seconds { 1 });
+        }
+
         if (!mqttClient.connected()) {
             if (!tryConnect()) {
                 // Try connecting again in 10 seconds
