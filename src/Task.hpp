@@ -124,6 +124,8 @@ public:
                         entry.next = now + schedule.delay;
                         break;
                     case Task::ScheduleType::BEFORE:
+                        // Signal that once a ronud is triggered, we need to run regardless of when it happens
+                        entry.next = time_point<system_clock>();
                         break;
                 }
                 nextRound = std::min(nextRound, now + schedule.delay);
