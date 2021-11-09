@@ -22,7 +22,7 @@ class SimpleUptimeTask
     : public Task {
 public:
     SimpleUptimeTask()
-        : Task("Hello") {
+        : Task("Uptime printer") {
     }
 
     milliseconds loop(time_point<system_clock> now) override {
