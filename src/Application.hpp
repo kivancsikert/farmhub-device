@@ -5,6 +5,7 @@
 
 #include <Configuration.hpp>
 #include <Farmhub.hpp>
+#include <MdnsHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
 #include <commands/EchoCommand.hpp>
@@ -24,7 +25,7 @@ public:
         beginFileSystem();
         wifiProvider.begin();
         WiFi.setHostname(hostname.c_str());
-        MDNS.begin(hostname.c_str());
+        mdns.begin(hostname);
         ota.begin(hostname);
         mqtt.begin();
 
@@ -44,7 +45,7 @@ protected:
         : name(name)
         , version(version)
         , wifiProvider(wifiProvider)
-        , mqtt([&](const JsonObject& config) { configurationUpdated(config); })
+        , mqtt(mdns, [&](const JsonObject& config) { configurationUpdated(config); })
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
@@ -65,6 +66,7 @@ protected:
     const String name;
     const String version;
     WiFiProvider& wifiProvider;
+    MdnsHandler mdns;
 
     OtaHandler ota;
     MqttHandler mqtt;
