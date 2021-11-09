@@ -132,8 +132,10 @@ public:
                         entry.next = nextScheduledTime;
                         break;
                     case Task::ScheduleType::BEFORE:
+#ifdef LOG_TASKS
                         Serial.printf(" Next execution scheduled ALAP before %ld ms.\n",
                             (long) schedule.delay.count());
+#endif
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
                         entry.next = time_point<system_clock>();
                         break;
