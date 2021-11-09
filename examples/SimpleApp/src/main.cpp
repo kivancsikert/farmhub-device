@@ -26,9 +26,11 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<system_clock> now) override {
-        Serial.printf("Simple app has been running for %ld seconds\n",
-            (long) duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
+        auto now = system_clock::now();
+        Serial.printf("Simple app has been running for %ld seconds (drift %ld ms)\n",
+            (long) duration_cast<seconds>(now.time_since_epoch()).count(),
+            (long) duration_cast<milliseconds>(now - scheduledTime).count());
         return repeatAsapAfter(seconds { 10 });
     }
 };

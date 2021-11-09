@@ -110,7 +110,7 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
         if (WiFi.status() != WL_CONNECTED) {
             Serial.println("Waiting to connect to MQTT until WIFI is available");
             return repeatAsapAfter(seconds { 1 });

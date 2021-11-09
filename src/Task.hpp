@@ -49,10 +49,11 @@ protected:
      * Scheduling is best effort, which means that the task will not be called earlier than the
      * time returned by this function, but it may be called later.
      *
-     * @param now the current time.
-     * @return milliseconds the time until the next loop from <code>now</code>.
+     * @param scheduledTime the time the task was scheduled to execute. This might be earlier than
+     *     the current time.
+     * @return Schedule the schedule to keep based on <code>scheduledTime</code>.
      */
-    virtual const Schedule loop(time_point<system_clock> now) = 0;
+    virtual const Schedule loop(time_point<system_clock> scheduledTime) = 0;
     friend class TaskContainer;
 
     static const Schedule repeatImmediately() {
@@ -78,7 +79,7 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
         callback();
         return repeatAsapAfter(delay);
     }
@@ -113,14 +114,20 @@ public:
 #ifdef LOG_TASKS
                 Serial.print(", running...");
 #endif
-                auto schedule = entry.task.loop(now);
+                auto scheduledTime = entry.next == time_point<system_clock>()
+                    ? now
+                    : entry.next;
+                auto schedule = entry.task.loop(scheduledTime);
+                auto nextScheduledTime = scheduledTime + schedule.delay;
+                nextRound = std::min(nextRound, nextScheduledTime);
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
 #ifdef LOG_TASKS
                         Serial.printf(" Next execution scheduled ASAP after %ld ms.\n",
                             (long) schedule.delay.count());
 #endif
-                        entry.next = now + schedule.delay;
+                        // Do not trigger before next scheduled time
+                        entry.next = nextScheduledTime;
                         break;
                     case Task::ScheduleType::BEFORE:
                         Serial.printf(" Next execution scheduled ALAP before %ld ms.\n",
@@ -129,7 +136,6 @@ public:
                         entry.next = time_point<system_clock>();
                         break;
                 }
-                nextRound = std::min(nextRound, now + schedule.delay);
             } else {
 #ifdef LOG_TASKS
                 Serial.println(", skipping.");

@@ -49,7 +49,7 @@ public:
         ArduinoOTA.begin();
     }
 
-    const Schedule loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
         ArduinoOTA.handle();
         return updating
             ? repeatImmediately()
