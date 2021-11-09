@@ -20,6 +20,28 @@ public:
         : name(name) {
     }
 
+    enum class ScheduleType {
+        /**
+         * Schedule task to execute again after a given duration, as soon as possible.
+         */
+        AFTER,
+
+        /**
+         * Schedule task to execute again before a given duration, as late as possible.
+         */
+        BEFORE
+    };
+
+    struct Schedule {
+        Schedule(ScheduleType type, milliseconds period)
+            : type(type)
+            , period(period) {
+        }
+
+        const ScheduleType type;
+        const milliseconds period;
+    };
+
     /**
      * @brief Loops the task and returns how much time is expected to elapse before the next loop.
      *
@@ -29,9 +51,22 @@ public:
      * @param now the current time.
      * @return milliseconds the time until the next loop from <code>now</code>.
      */
-    virtual milliseconds loop(time_point<system_clock> now) = 0;
+    virtual const Schedule loop(time_point<system_clock> now) = 0;
 
     const String name;
+
+protected:
+    static const Schedule repeatImmediately() {
+        return Schedule(ScheduleType::AFTER, milliseconds(0));
+    }
+
+    static const Schedule repeatAsapAfter(milliseconds period) {
+        return Schedule(ScheduleType::AFTER, period);
+    }
+
+    static const Schedule repeatAlapBefore(milliseconds period) {
+        return Schedule(ScheduleType::BEFORE, period);
+    }
 };
 
 class TaskContainer {
@@ -59,13 +94,23 @@ public:
 #ifdef LOG_TASKS
                 Serial.printf("Running '%s'...\n", entry.task.name.c_str());
 #endif
-                auto delay = entry.task.loop(now);
-                entry.next = now + delay;
-                nextRound = std::min(nextRound, entry.next);
+                auto schedule = entry.task.loop(now);
+                switch (schedule.type) {
+                    case Task::ScheduleType::AFTER:
 #ifdef LOG_TASKS
-                Serial.printf("Scheduling '%s' next at %ld\n",
-                    entry.task.name.c_str(),
-                    (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
+                        Serial.printf("Scheduling '%s' to execute ASAP after %ld\n",
+                            entry.task.name.c_str(),
+                            (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
+#endif
+                        entry.next = now + schedule.period;
+                        break;
+                    case Task::ScheduleType::BEFORE:
+                        break;
+                }
+                nextRound = std::min(nextRound, now + schedule.period);
+#ifdef LOG_TASKS
+                Serial.printf("Next round will be at %ld\n",
+                    (long) duration_cast<milliseconds>(nextRound.time_since_epoch()).count());
 #endif
             } else {
 #ifdef LOG_TASKS

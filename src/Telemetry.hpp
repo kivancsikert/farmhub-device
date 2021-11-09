@@ -47,9 +47,9 @@ public:
     }
 
 protected:
-    milliseconds loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> now) override {
         publish();
-        return interval;
+        return repeatAsapAfter(interval);
     }
 
 private:

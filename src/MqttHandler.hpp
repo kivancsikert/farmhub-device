@@ -110,11 +110,11 @@ public:
     }
 
 protected:
-    milliseconds loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> now) override {
         if (!mqttClient.connected()) {
             if (!tryConnect()) {
                 // Try connecting again in 10 seconds
-                return seconds { 10 };
+                return repeatAsapAfter(seconds { 10 });
             }
         }
 
@@ -131,7 +131,8 @@ protected:
         }
 
         mqttClient.loop();
-        return milliseconds { MQTT_POLL_FREQUENCY };
+        // TODO We could repeat sooner if we couldn't publish everything
+        return repeatAsapAfter(milliseconds { MQTT_POLL_FREQUENCY });
     }
 
 private:
