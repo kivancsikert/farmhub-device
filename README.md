@@ -18,8 +18,7 @@ See [examples/SimpleApp] for an example application.
 
 There are some optional services these devices can use:
 
-- simple task scheduling via `TimedLoopable`
-- NTP time synchronization (see `NtpHandler`)
+- simple task scheduling via `TaskContainer`
 
 ## Configuration
 

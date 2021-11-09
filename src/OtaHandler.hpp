@@ -3,30 +3,33 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 
-#include <Loopable.hpp>
+#include <Task.hpp>
 
 namespace farmhub { namespace client {
 
 class OtaHandler
-    : public Loopable<void> {
+    : public Task {
 
 public:
-    OtaHandler() {
+    OtaHandler()
+        : Task("OTA") {
     }
 
-    void begin(const char* hostname) {
-        ArduinoOTA.setHostname(hostname);
+    void begin(const String& hostname) {
+        ArduinoOTA.setHostname(hostname.c_str());
 
-        ArduinoOTA.onStart([]() {
+        ArduinoOTA.onStart([&]() {
             Serial.println("Start");
+            updating = true;
         });
-        ArduinoOTA.onEnd([]() {
+        ArduinoOTA.onEnd([&]() {
             Serial.println("\nEnd");
+            updating = false;
         });
         ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
             Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
         });
-        ArduinoOTA.onError([](ota_error_t error) {
+        ArduinoOTA.onError([&](ota_error_t error) {
             Serial.printf("Web socket error[%u]\n", error);
             if (error == OTA_AUTH_ERROR) {
                 Serial.println("Auth Failed");
@@ -41,13 +44,20 @@ public:
             } else {
                 Serial.println("Other error");
             }
+            updating = false;
         });
         ArduinoOTA.begin();
     }
 
-    void loop() {
+    milliseconds loop(time_point<system_clock> now) override {
         ArduinoOTA.handle();
+        return updating
+            ? milliseconds::zero()
+            : milliseconds { 1000 };
     }
+
+private:
+    bool updating = false;
 };
 
 }}    // namespace farmhub::client

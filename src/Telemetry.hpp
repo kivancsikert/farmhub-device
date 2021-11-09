@@ -1,10 +1,11 @@
 #pragma once
 
-#include "MqttHandler.hpp"
-
 #include <ArduinoJson.h>
 #include <functional>
 #include <list>
+
+#include <MqttHandler.hpp>
+#include <Task.hpp>
 
 namespace farmhub { namespace client {
 
@@ -14,16 +15,17 @@ protected:
     friend class TelemetryPublisher;
 };
 
-class TelemetryPublisher {
+class TelemetryPublisher
+    : public Task {
 public:
     TelemetryPublisher(
         MqttHandler& mqtt,
+        milliseconds interval,
         const String& topic = "telemetry")
-        : mqtt(mqtt)
+        : Task("Telemetry publisher")
+        , mqtt(mqtt)
+        , interval(interval)
         , topic(topic) {
-    }
-
-    void begin() {
     }
 
     void registerProvider(TelemetryProvider& provider) {
@@ -44,8 +46,15 @@ public:
         mqtt.publish(topic, doc);
     }
 
+protected:
+    milliseconds loop(time_point<system_clock> now) override {
+        publish();
+        return interval;
+    }
+
 private:
     MqttHandler& mqtt;
+    const milliseconds interval;
     const String topic;
     std::list<std::reference_wrapper<TelemetryProvider>> providers;
 };

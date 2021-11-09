@@ -1,20 +1,11 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
-#include <WiFi.h>
-#include <WiFiManager.h>
 
-#include <ArduinoJsonConfig.hpp>
-#include <MqttHandler.hpp>
-#include <OtaHandler.hpp>
+#include <Application.hpp>
+#include <Task.hpp>
 #include <Telemetry.hpp>
-#include <commands/EchoCommand.hpp>
-#include <commands/FileCommands.hpp>
-#include <commands/HttpUpdateCommand.hpp>
-#include <commands/RestartCommand.hpp>
+#include <wifi/WiFiManagerProvider.hpp>
 
 using namespace farmhub::client;
-
-const char* HOSTNAME = "simple-app";
 
 class SimpleTelemetryProvider
     : public TelemetryProvider {
@@ -27,110 +18,55 @@ private:
     unsigned int counter = 0;
 };
 
-OtaHandler ota;
-MqttHandler mqtt;
-commands::EchoCommand echoCommand(mqtt);
-commands::FileCommands fileCommands(mqtt);
-commands::HttpUpdateCommand httpUpdateCommand(mqtt);
-commands::RestartCommand restartCommand(mqtt);
-
-SimpleTelemetryProvider telemetry;
-TelemetryPublisher telemetryPublisher(mqtt);
-
-void fatalError(String message) {
-    Serial.println(message);
-    Serial.flush();
-    delay(10000);
-    ESP.restart();
-}
-
-void beginFileSystem() {
-    Serial.println("Starting up file system...");
-    if (!SPIFFS.begin()) {
-        fatalError("Could not initialize file system");
-        return;
+class SimpleUptimeTask
+    : public Task {
+public:
+    SimpleUptimeTask()
+        : Task("Uptime printer") {
     }
 
-    Serial.println("Contents:");
-    File root = SPIFFS.open("/", FILE_READ);
-    while (true) {
-        File file = root.openNextFile();
-        if (!file) {
-            break;
-        }
-        Serial.printf(" - %s (%d bytes)\n", file.name(), file.size());
-        file.close();
+    milliseconds loop(time_point<system_clock> now) override {
+        Serial.printf("Simple app has been running for %ld seconds\n",
+            (long) duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
+        return seconds { 1 };
     }
-}
+};
+
+class SimpleApp : public Application {
+public:
+    SimpleApp()
+        : Application("SimpleApp", "UNKNOWN", wifiProvider)
+        , telemetryPublisher(mqtt, seconds { 5 }) {
+        addTask(telemetryPublisher);
+        addTask(uptimeTask);
+    }
+
+protected:
+    void beginApp() override {
+        telemetryPublisher.registerProvider(telemetry);
+    }
+
+    void configurationUpdated(const JsonObject& json) override {
+        Serial.println("Received MQTT config");
+        serializeJsonPretty(json, Serial);
+        Serial.println();
+    }
+
+private:
+    WiFiManagerProvider wifiProvider;
+    SimpleTelemetryProvider telemetry;
+    TelemetryPublisher telemetryPublisher;
+    SimpleUptimeTask uptimeTask;
+
+    int iterations = 0;
+};
+
+SimpleApp app;
 
 void setup() {
-    Serial.begin(115200);
-    Serial.println();
-
-    beginFileSystem();
-
-    // Explicitly set mode, ESP defaults to STA+AP
-    WiFi.mode(WIFI_STA);
-
-    WiFiManager wm;
-
-    // Reset settings - wipe stored credentials for testing;
-    // these are stored by the ESP library
-    //wm.resetSettings();
-
-    // Allow some time for connecting to the WIFI, otherwise
-    // open configuration portal
-    wm.setConnectTimeout(20);
-
-    // Close the configuration portal after some time and reboot
-    // if no WIFI is configured in that time
-    wm.setConfigPortalTimeout(300);
-
-    // Automatically connect using saved credentials,
-    // if connection fails, it starts an access point
-    // with an auto-generated SSID and no password,
-    // then goes into a blocking loop awaiting
-    // configuration and will return success result.
-    if (!wm.autoConnect()) {
-        fatalError("Failed to connect to WIFI");
-    }
-
-    if (!SPIFFS.begin()) {
-        fatalError("Could not initialize file system");
-    }
-
-    WiFi.setHostname(HOSTNAME);
-    MDNS.begin(HOSTNAME);
-    ota.begin(HOSTNAME);
-
-    File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
-    DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
-    DeserializationError error = deserializeJson(mqttConfigJson, mqttConfigFile);
-    mqttConfigFile.close();
-    if (error) {
-        Serial.println(mqttConfigFile.readString());
-        fatalError("Failed to read MQTT config file at /mqtt-config.json: " + String(error.c_str()));
-    }
-    mqtt.begin(
-        mqttConfigJson.as<JsonObject>(),
-        [](const JsonObject& json) {
-            Serial.println("Received MQTT config");
-            serializeJsonPretty(json, Serial);
-        });
-
-    telemetryPublisher.registerProvider(telemetry);
-    telemetryPublisher.begin();
+    app.begin("simple-app");
 }
 
-int iterations = 0;
-
 void loop() {
-    ota.loop();
-    mqtt.loop();
-
-    if (iterations++ % 50 == 0) {
-        telemetryPublisher.publish();
-    }
-
-    delay(100);
+    app.loop();
 }
