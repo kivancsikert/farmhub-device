@@ -117,13 +117,13 @@ public:
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
 #ifdef LOG_TASKS
-                        Serial.printf(", next execution scheduled ASAP after %ld.\n",
+                        Serial.printf(" Next execution scheduled ASAP after %ld ms.\n",
                             (long) schedule.delay.count());
 #endif
                         entry.next = now + schedule.delay;
                         break;
                     case Task::ScheduleType::BEFORE:
-                        Serial.printf(", next execution scheduled ALAP before %ld.\n",
+                        Serial.printf(" Next execution scheduled ALAP before %ld ms.\n",
                             (long) schedule.delay.count());
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
                         entry.next = time_point<system_clock>();
@@ -143,6 +143,10 @@ public:
             Serial.printf("Sleeping for %ld ms\n", (long) waitTime.count());
 #endif
             delay(waitTime.count());
+        } else {
+#ifdef LOG_TASKS
+            Serial.println("Running next round immediately");
+#endif
         }
     }
 
