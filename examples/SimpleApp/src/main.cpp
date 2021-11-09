@@ -26,8 +26,8 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<system_clock> scheduledTime) override {
-        auto now = system_clock::now();
+    const Schedule loop(time_point<steady_clock> scheduledTime) override {
+        auto now = steady_clock::now();
         Serial.printf("Simple app has been running for %ld seconds (drift %ld ms)\n",
             (long) duration_cast<seconds>(now.time_since_epoch()).count(),
             (long) duration_cast<milliseconds>(now - scheduledTime).count());
