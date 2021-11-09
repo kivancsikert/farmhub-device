@@ -25,10 +25,13 @@ public:
         : Task("Uptime printer") {
     }
 
-    milliseconds loop(time_point<system_clock> now) override {
-        Serial.printf("Simple app has been running for %ld seconds\n",
-            (long) duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
-        return seconds { 1 };
+protected:
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
+        auto now = system_clock::now();
+        Serial.printf("Simple app has been running for %ld seconds (drift %ld ms)\n",
+            (long) duration_cast<seconds>(now.time_since_epoch()).count(),
+            (long) duration_cast<milliseconds>(now - scheduledTime).count());
+        return repeatAsapAfter(seconds { 10 });
     }
 };
 
@@ -36,8 +39,11 @@ class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", wifiProvider)
-        , telemetryPublisher(mqtt, seconds { 5 }) {
-        addTask(telemetryPublisher);
+        , telemetryPublisher(mqtt)
+        , telemetryTask("Publish telemetry", seconds { 5 }, [&]() {
+            telemetryPublisher.publish();
+        }) {
+        addTask(telemetryTask);
         addTask(uptimeTask);
     }
 
@@ -56,6 +62,7 @@ private:
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
     TelemetryPublisher telemetryPublisher;
+    IntervalTask telemetryTask;
     SimpleUptimeTask uptimeTask;
 
     int iterations = 0;

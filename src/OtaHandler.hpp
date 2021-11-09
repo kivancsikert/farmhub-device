@@ -49,11 +49,11 @@ public:
         ArduinoOTA.begin();
     }
 
-    milliseconds loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
         ArduinoOTA.handle();
         return updating
-            ? milliseconds::zero()
-            : milliseconds { 1000 };
+            ? repeatImmediately()
+            : repeatAsapAfter(seconds { 1 });
     }
 
 private:

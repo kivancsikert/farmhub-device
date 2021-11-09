@@ -6,7 +6,7 @@
 #include <Configuration.hpp>
 #include <ESPmDNS.h>
 #include <MQTT.h>
-#include <WiFiClient.h>
+#include <WiFi.h>
 #include <chrono>
 #include <functional>
 #include <list>
@@ -110,11 +110,16 @@ public:
     }
 
 protected:
-    milliseconds loop(time_point<system_clock> now) override {
+    const Schedule loop(time_point<system_clock> scheduledTime) override {
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("Waiting to connect to MQTT until WIFI is available");
+            return repeatAsapAfter(seconds { 1 });
+        }
+
         if (!mqttClient.connected()) {
             if (!tryConnect()) {
                 // Try connecting again in 10 seconds
-                return seconds { 10 };
+                return repeatAsapAfter(seconds { 10 });
             }
         }
 
@@ -131,7 +136,8 @@ protected:
         }
 
         mqttClient.loop();
-        return milliseconds { MQTT_POLL_FREQUENCY };
+        // TODO We could repeat sooner if we couldn't publish everything
+        return repeatAsapAfter(milliseconds { MQTT_POLL_FREQUENCY });
     }
 
 private:
