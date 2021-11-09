@@ -5,7 +5,6 @@
 #include <list>
 
 #include <MqttHandler.hpp>
-#include <Task.hpp>
 
 namespace farmhub { namespace client {
 
@@ -15,16 +14,12 @@ protected:
     friend class TelemetryPublisher;
 };
 
-class TelemetryPublisher
-    : public Task {
+class TelemetryPublisher {
 public:
     TelemetryPublisher(
         MqttHandler& mqtt,
-        milliseconds interval,
         const String& topic = "telemetry")
-        : Task("Telemetry publisher")
-        , mqtt(mqtt)
-        , interval(interval)
+        : mqtt(mqtt)
         , topic(topic) {
     }
 
@@ -46,15 +41,8 @@ public:
         mqtt.publish(topic, doc);
     }
 
-protected:
-    const Schedule loop(time_point<system_clock> now) override {
-        publish();
-        return repeatAsapAfter(interval);
-    }
-
 private:
     MqttHandler& mqtt;
-    const milliseconds interval;
     const String topic;
     std::list<std::reference_wrapper<TelemetryProvider>> providers;
 };

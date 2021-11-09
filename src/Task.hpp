@@ -3,11 +3,8 @@
 #include <Arduino.h>
 #include <chrono>
 #include <functional>
-#include <unordered_map>
 
 using namespace std::chrono;
-using std::reference_wrapper;
-using std::unordered_map;
 
 namespace farmhub { namespace client {
 
@@ -33,13 +30,13 @@ public:
     };
 
     struct Schedule {
-        Schedule(ScheduleType type, milliseconds period)
+        Schedule(ScheduleType type, milliseconds delay)
             : type(type)
-            , period(period) {
+            , delay(delay) {
         }
 
         const ScheduleType type;
-        const milliseconds period;
+        const milliseconds delay;
     };
 
     /**
@@ -60,13 +57,32 @@ protected:
         return Schedule(ScheduleType::AFTER, milliseconds(0));
     }
 
-    static const Schedule repeatAsapAfter(milliseconds period) {
-        return Schedule(ScheduleType::AFTER, period);
+    static const Schedule repeatAsapAfter(milliseconds delay) {
+        return Schedule(ScheduleType::AFTER, delay);
     }
 
-    static const Schedule repeatAlapBefore(milliseconds period) {
-        return Schedule(ScheduleType::BEFORE, period);
+    static const Schedule repeatAlapBefore(milliseconds delay) {
+        return Schedule(ScheduleType::BEFORE, delay);
     }
+};
+
+class IntervalTask
+    : public Task {
+public:
+    IntervalTask(const String& name, milliseconds delay, std::function<void()> callback)
+        : Task(name)
+        , delay(delay)
+        , callback(callback) {
+    }
+
+    const Schedule loop(time_point<system_clock> now) override {
+        callback();
+        return repeatAsapAfter(delay);
+    }
+
+private:
+    const milliseconds delay;
+    const std::function<void()> callback;
 };
 
 class TaskContainer {
@@ -102,12 +118,12 @@ public:
                             entry.task.name.c_str(),
                             (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
 #endif
-                        entry.next = now + schedule.period;
+                        entry.next = now + schedule.delay;
                         break;
                     case Task::ScheduleType::BEFORE:
                         break;
                 }
-                nextRound = std::min(nextRound, now + schedule.period);
+                nextRound = std::min(nextRound, now + schedule.delay);
 #ifdef LOG_TASKS
                 Serial.printf("Next round will be at %ld\n",
                     (long) duration_cast<milliseconds>(nextRound.time_since_epoch()).count());
