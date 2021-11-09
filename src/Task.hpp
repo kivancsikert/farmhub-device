@@ -39,6 +39,9 @@ public:
         const milliseconds delay;
     };
 
+    const String name;
+
+protected:
     /**
      * @brief Loops the task and returns how much time is expected to elapse before the next loop.
      *
@@ -49,10 +52,8 @@ public:
      * @return milliseconds the time until the next loop from <code>now</code>.
      */
     virtual const Schedule loop(time_point<system_clock> now) = 0;
+    friend class TaskContainer;
 
-    const String name;
-
-protected:
     static const Schedule repeatImmediately() {
         return Schedule(ScheduleType::AFTER, milliseconds(0));
     }
@@ -75,6 +76,7 @@ public:
         , callback(callback) {
     }
 
+protected:
     const Schedule loop(time_point<system_clock> now) override {
         callback();
         return repeatAsapAfter(delay);

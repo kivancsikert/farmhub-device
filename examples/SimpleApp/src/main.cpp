@@ -25,6 +25,7 @@ public:
         : Task("Uptime printer") {
     }
 
+protected:
     const Schedule loop(time_point<system_clock> now) override {
         Serial.printf("Simple app has been running for %ld seconds\n",
             (long) duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
