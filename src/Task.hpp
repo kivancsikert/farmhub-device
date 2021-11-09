@@ -105,25 +105,26 @@ public:
         auto nextRound = now + seconds { 1 };
         for (auto& entry : tasks) {
 #ifdef LOG_TASKS
-            Serial.printf("Considering '%s' with next = %ld\n",
+            Serial.printf("Considering '%s' with next = %ld",
                 entry.task.name.c_str(),
                 (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
 #endif
             if (now >= entry.next) {
 #ifdef LOG_TASKS
-                Serial.printf("Running '%s'...\n", entry.task.name.c_str());
+                Serial.print(", running...");
 #endif
                 auto schedule = entry.task.loop(now);
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
 #ifdef LOG_TASKS
-                        Serial.printf("Scheduling '%s' to execute ASAP after %ld\n",
-                            entry.task.name.c_str(),
+                        Serial.printf(", next execution scheduled ASAP after %ld.\n",
                             (long) schedule.delay.count());
 #endif
                         entry.next = now + schedule.delay;
                         break;
                     case Task::ScheduleType::BEFORE:
+                        Serial.printf(", next execution scheduled ALAP before %ld.\n",
+                            (long) schedule.delay.count());
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
                         entry.next = time_point<system_clock>();
                         break;
@@ -131,7 +132,7 @@ public:
                 nextRound = std::min(nextRound, now + schedule.delay);
             } else {
 #ifdef LOG_TASKS
-                Serial.printf("Skipping '%s'...\n", entry.task.name.c_str());
+                Serial.println(", skipping.");
 #endif
             }
         }
