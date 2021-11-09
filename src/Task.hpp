@@ -134,6 +134,7 @@ public:
 #ifdef LOG_TASKS
                 Serial.println(", skipping.");
 #endif
+                nextRound = std::min(nextRound, entry.next);
             }
         }
 
