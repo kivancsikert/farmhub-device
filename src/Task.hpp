@@ -119,7 +119,7 @@ public:
 #ifdef LOG_TASKS
                         Serial.printf("Scheduling '%s' to execute ASAP after %ld\n",
                             entry.task.name.c_str(),
-                            (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
+                            (long) schedule.delay.count());
 #endif
                         entry.next = now + schedule.delay;
                         break;
@@ -127,10 +127,6 @@ public:
                         break;
                 }
                 nextRound = std::min(nextRound, now + schedule.delay);
-#ifdef LOG_TASKS
-                Serial.printf("Next round will be at %ld\n",
-                    (long) duration_cast<milliseconds>(nextRound.time_since_epoch()).count());
-#endif
             } else {
 #ifdef LOG_TASKS
                 Serial.printf("Skipping '%s'...\n", entry.task.name.c_str());
