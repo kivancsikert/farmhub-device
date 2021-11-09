@@ -53,7 +53,7 @@ protected:
      *     the current time.
      * @return Schedule the schedule to keep based on <code>scheduledTime</code>.
      */
-    virtual const Schedule loop(time_point<system_clock> scheduledTime) = 0;
+    virtual const Schedule loop(time_point<steady_clock> scheduledTime) = 0;
     friend class TaskContainer;
 
     static const Schedule repeatImmediately() {
@@ -79,7 +79,7 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<system_clock> scheduledTime) override {
+    const Schedule loop(time_point<steady_clock> scheduledTime) override {
         callback();
         return repeatAsapAfter(delay);
     }
@@ -100,12 +100,12 @@ public:
     }
 
     void loop() {
-        auto now = system_clock::now();
+        auto now = steady_clock::now();
 #ifdef LOG_TASKS
         Serial.printf("Now @%ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
 #endif
 
-        auto nextRound = previousRound + maxSleepTime;
+        auto nextRound = std::max(now, previousRound + maxSleepTime);
         for (auto& entry : tasks) {
 #ifdef LOG_TASKS
             Serial.printf("Considering '%s' with next @%ld",
@@ -116,11 +116,11 @@ public:
 #ifdef LOG_TASKS
                 Serial.print(", running...");
 #endif
-                auto scheduledTime = entry.next == time_point<system_clock>()
+                auto scheduledTime = entry.next == time_point<steady_clock>()
                     ? now
                     : entry.next;
                 auto schedule = entry.task.loop(scheduledTime);
-                auto nextScheduledTime = scheduledTime + schedule.delay;
+                auto nextScheduledTime = std::max(now, scheduledTime + schedule.delay);
                 nextRound = std::min(nextRound, nextScheduledTime);
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
@@ -137,7 +137,7 @@ public:
                             (long) schedule.delay.count());
 #endif
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
-                        entry.next = time_point<system_clock>();
+                        entry.next = time_point<steady_clock>();
                         break;
                 }
             } else {
@@ -148,7 +148,7 @@ public:
             }
         }
 
-        auto waitTime = duration_cast<milliseconds>(nextRound - system_clock::now());
+        auto waitTime = duration_cast<milliseconds>(nextRound - steady_clock::now());
         if (waitTime > milliseconds::zero()) {
 #ifdef LOG_TASKS
             Serial.printf("Sleeping for %ld ms\n", (long) waitTime.count());
@@ -170,12 +170,12 @@ private:
         }
 
         Task& task;
-        time_point<system_clock> next;
+        time_point<steady_clock> next;
     };
 
     const milliseconds maxSleepTime;
     std::list<TaskEntry> tasks;
-    time_point<system_clock> previousRound;
+    time_point<steady_clock> previousRound;
 };
 
 }}    // namespace farmhub::client
