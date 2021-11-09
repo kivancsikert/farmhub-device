@@ -91,7 +91,9 @@ private:
 
 class TaskContainer {
 public:
-    TaskContainer() = default;
+    TaskContainer(milliseconds maxSleepTime)
+        : maxSleepTime(maxSleepTime) {
+    }
 
     void add(Task& task) {
         tasks.emplace_back(task);
@@ -100,13 +102,13 @@ public:
     void loop() {
         auto now = system_clock::now();
 #ifdef LOG_TASKS
-        Serial.printf("Now is %ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
+        Serial.printf("Now @%ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
 #endif
 
-        auto nextRound = now + seconds { 1 };
+        auto nextRound = previousRound + maxSleepTime;
         for (auto& entry : tasks) {
 #ifdef LOG_TASKS
-            Serial.printf("Considering '%s' with next = %ld",
+            Serial.printf("Considering '%s' with next @%ld",
                 entry.task.name.c_str(),
                 (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
 #endif
@@ -155,6 +157,7 @@ public:
             Serial.println("Running next round immediately");
 #endif
         }
+        previousRound = nextRound;
     }
 
 private:
@@ -168,7 +171,9 @@ private:
         time_point<system_clock> next;
     };
 
+    const milliseconds maxSleepTime;
     std::list<TaskEntry> tasks;
+    time_point<system_clock> previousRound;
 };
 
 }}    // namespace farmhub::client

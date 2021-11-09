@@ -36,7 +36,11 @@ public:
     }
 
 protected:
-    Application(const String& name, const String& version, WiFiProvider& wifiProvider)
+    Application(
+        const String& name,
+        const String& version,
+        WiFiProvider& wifiProvider,
+        milliseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
         , wifiProvider(wifiProvider)
@@ -44,7 +48,8 @@ protected:
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
-        , restartCommand(mqtt) {
+        , restartCommand(mqtt)
+        , tasks(maxSleepTime) {
 
         addTask(ota);
         addTask(mqtt);
@@ -72,8 +77,6 @@ protected:
     }
 
 private:
-    TaskContainer tasks;
-
     void beginFileSystem() {
         Serial.print("Starting file system... ");
         if (!SPIFFS.begin()) {
@@ -92,6 +95,8 @@ private:
             file.close();
         }
     }
+
+    TaskContainer tasks;
 };
 
 }}    // namespace farmhub::client
