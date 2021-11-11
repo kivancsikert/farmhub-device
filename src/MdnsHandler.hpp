@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ESPmDNS.h>
+#include <WiFi.h>
 #include <functional>
 
 #include <Farmhub.hpp>
@@ -11,6 +12,27 @@ public:
 
     void begin(const String& hostname) {
         MDNS.begin(hostname.c_str());
+    }
+
+    // Lookup host name via MDNS explicitly
+    // See https://github.com/kivancsikert/chicken-coop-door/issues/128
+    bool withHost(
+        const String& hostname,
+        const std::function<void(const IPAddress&)> callback) {
+        String mdnsHost(hostname);
+        if (mdnsHost.endsWith(".local")) {
+            mdnsHost = mdnsHost.substring(0, mdnsHost.length() - 6);
+        }
+        IPAddress address = MDNS.queryHost(mdnsHost);
+        if (address == IPAddress()) {
+            WiFi.hostByName(mdnsHost.c_str(), address);
+        }
+        if (address == IPAddress()) {
+            Serial.printf("Could not find host %s\n", hostname.c_str());
+            return false;
+        }
+        callback(address);
+        return true;
     }
 
     bool withService(

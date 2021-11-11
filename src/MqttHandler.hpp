@@ -146,11 +146,12 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
-        String mdnsHost = config.getHost();
-        if (mdnsHost.isEmpty()) {
+        String hostname = config.getHost();
+        if (hostname.isEmpty()) {
             bool found = mdns.withService(
                 "mqtt", "tcp",
                 [&](const String& hostname, const IPAddress& address, uint16_t port) {
+                    Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
                     mqttClient.setHost(address, port);
                 });
 
@@ -159,18 +160,13 @@ private:
                 return false;
             }
         } else {
-            int portNumber = config.getPort();
-            if (mdnsHost.endsWith(".local")) {
-                mdnsHost = mdnsHost.substring(0, mdnsHost.length() - 6);
-            }
-            auto address = MDNS.queryHost(mdnsHost);
-            Serial.print("Connecting to MQTT broker at ");
-            if (address == IPAddress()) {
-                Serial.printf("%s:%d", config.getHost().c_str(), portNumber);
-                mqttClient.setHost(config.getHost().c_str(), portNumber);
-            } else {
-                Serial.printf("%s:%d", address.toString().c_str(), portNumber);
-                mqttClient.setHost(address, portNumber);
+            int port = config.getPort();
+            bool found = mdns.withHost(hostname, [&, port](const IPAddress& address) {
+                Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
+                mqttClient.setHost(address, port);
+            });
+            if (!found) {
+                return false;
             }
         }
         Serial.print("...");
