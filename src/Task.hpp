@@ -105,7 +105,7 @@ public:
         Serial.printf("Now @%ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
 #endif
 
-        auto nextRound = std::max(now, previousRound + maxSleepTime);
+        auto nextRound = previousRound + maxSleepTime;
         for (auto& entry : tasks) {
 #ifdef LOG_TASKS
             Serial.printf("Considering '%s' with next @%ld",
@@ -120,7 +120,7 @@ public:
                     ? now
                     : entry.next;
                 auto schedule = entry.task.loop(scheduledTime);
-                auto nextScheduledTime = std::max(now, scheduledTime + schedule.delay);
+                auto nextScheduledTime = scheduledTime + schedule.delay;
                 nextRound = std::min(nextRound, nextScheduledTime);
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
