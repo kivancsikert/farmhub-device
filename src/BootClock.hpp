@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
 #include <chrono>
+#include <esp_timer.h>
 
 using namespace std;
 
@@ -21,7 +21,7 @@ struct boot_clock {
     static constexpr bool is_steady = true;
 
     static time_point now() noexcept {
-        return time_point(duration(micros()));
+        return time_point(duration(esp_timer_get_time()));
     }
 };
 
