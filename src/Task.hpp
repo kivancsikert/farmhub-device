@@ -33,13 +33,13 @@ public:
     };
 
     struct Schedule {
-        Schedule(ScheduleType type, milliseconds delay)
+        Schedule(ScheduleType type, microseconds delay)
             : type(type)
             , delay(delay) {
         }
 
         const ScheduleType type;
-        const milliseconds delay;
+        const microseconds delay;
     };
 
     const String name;
@@ -59,14 +59,14 @@ protected:
     friend class TaskContainer;
 
     static const Schedule repeatImmediately() {
-        return Schedule(ScheduleType::AFTER, milliseconds(0));
+        return Schedule(ScheduleType::AFTER, microseconds(0));
     }
 
-    static const Schedule repeatAsapAfter(milliseconds delay) {
+    static const Schedule repeatAsapAfter(microseconds delay) {
         return Schedule(ScheduleType::AFTER, delay);
     }
 
-    static const Schedule repeatAlapBefore(milliseconds delay) {
+    static const Schedule repeatAlapBefore(microseconds delay) {
         return Schedule(ScheduleType::BEFORE, delay);
     }
 };
@@ -74,7 +74,7 @@ protected:
 class IntervalTask
     : public Task {
 public:
-    IntervalTask(const String& name, milliseconds delay, std::function<void()> callback)
+    IntervalTask(const String& name, microseconds delay, std::function<void()> callback)
         : Task(name)
         , delay(delay)
         , callback(callback) {
@@ -87,13 +87,13 @@ protected:
     }
 
 private:
-    const milliseconds delay;
+    const microseconds delay;
     const std::function<void()> callback;
 };
 
 class TaskContainer {
 public:
-    TaskContainer(milliseconds maxSleepTime)
+    TaskContainer(microseconds maxSleepTime)
         : maxSleepTime(maxSleepTime) {
     }
 
@@ -104,7 +104,7 @@ public:
     void loop() {
         auto now = boot_clock::now();
 #ifdef LOG_TASKS
-        Serial.printf("Now @%ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
+        Serial.printf("Now @%ld\n", (long) now.time_since_epoch().count());
 #endif
 
         auto nextRound = previousRound + maxSleepTime;
@@ -112,7 +112,7 @@ public:
 #ifdef LOG_TASKS
             Serial.printf("Considering '%s' with next @%ld",
                 entry.task.name.c_str(),
-                (long) duration_cast<milliseconds>(entry.next.time_since_epoch()).count());
+                (long) entry.next.time_since_epoch().count());
 #endif
             if (now >= entry.next) {
 #ifdef LOG_TASKS
@@ -127,7 +127,7 @@ public:
                 switch (schedule.type) {
                     case Task::ScheduleType::AFTER:
 #ifdef LOG_TASKS
-                        Serial.printf(" Next execution scheduled ASAP after %ld ms.\n",
+                        Serial.printf(" Next execution scheduled ASAP after %ld us.\n",
                             (long) schedule.delay.count());
 #endif
                         // Do not trigger before next scheduled time
@@ -135,7 +135,7 @@ public:
                         break;
                     case Task::ScheduleType::BEFORE:
 #ifdef LOG_TASKS
-                        Serial.printf(" Next execution scheduled ALAP before %ld ms.\n",
+                        Serial.printf(" Next execution scheduled ALAP before %ld us.\n",
                             (long) schedule.delay.count());
 #endif
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
@@ -150,12 +150,12 @@ public:
             }
         }
 
-        auto waitTime = duration_cast<milliseconds>(nextRound - boot_clock::now());
-        if (waitTime > milliseconds::zero()) {
+        microseconds waitTime = nextRound - boot_clock::now();
+        if (waitTime > microseconds::zero()) {
 #ifdef LOG_TASKS
-            Serial.printf("Sleeping for %ld ms\n", (long) waitTime.count());
+            Serial.printf("Sleeping for %ld us\n", (long) waitTime.count());
 #endif
-            delay(waitTime.count());
+            delay(duration_cast<milliseconds>(waitTime).count());
         } else {
 #ifdef LOG_TASKS
             Serial.println("Running next round immediately");
@@ -175,7 +175,7 @@ private:
         time_point<boot_clock> next;
     };
 
-    const milliseconds maxSleepTime;
+    const microseconds maxSleepTime;
     std::list<TaskEntry> tasks;
     time_point<boot_clock> previousRound;
 };

@@ -41,7 +41,7 @@ protected:
         const String& name,
         const String& version,
         WiFiProvider& wifiProvider,
-        milliseconds maxSleepTime = minutes { 1 })
+        microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
         , wifiProvider(wifiProvider)
