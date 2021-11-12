@@ -5,6 +5,8 @@
 #include <functional>
 #include <list>
 
+#include <BootClock.hpp>
+
 using namespace std::chrono;
 
 namespace farmhub { namespace client {
@@ -53,7 +55,7 @@ protected:
      *     the current time.
      * @return Schedule the schedule to keep based on <code>scheduledTime</code>.
      */
-    virtual const Schedule loop(time_point<steady_clock> scheduledTime) = 0;
+    virtual const Schedule loop(time_point<boot_clock> scheduledTime) = 0;
     friend class TaskContainer;
 
     static const Schedule repeatImmediately() {
@@ -79,7 +81,7 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<steady_clock> scheduledTime) override {
+    const Schedule loop(time_point<boot_clock> scheduledTime) override {
         callback();
         return repeatAsapAfter(delay);
     }
@@ -100,7 +102,7 @@ public:
     }
 
     void loop() {
-        auto now = steady_clock::now();
+        auto now = boot_clock::now();
 #ifdef LOG_TASKS
         Serial.printf("Now @%ld\n", (long) duration_cast<milliseconds>(now.time_since_epoch()).count());
 #endif
@@ -116,7 +118,7 @@ public:
 #ifdef LOG_TASKS
                 Serial.print(", running...");
 #endif
-                auto scheduledTime = entry.next == time_point<steady_clock>()
+                auto scheduledTime = entry.next == time_point<boot_clock>()
                     ? now
                     : entry.next;
                 auto schedule = entry.task.loop(scheduledTime);
@@ -137,7 +139,7 @@ public:
                             (long) schedule.delay.count());
 #endif
                         // Signal that once a ronud is triggered, we need to run regardless of when it happens
-                        entry.next = time_point<steady_clock>();
+                        entry.next = time_point<boot_clock>();
                         break;
                 }
             } else {
@@ -148,7 +150,7 @@ public:
             }
         }
 
-        auto waitTime = duration_cast<milliseconds>(nextRound - steady_clock::now());
+        auto waitTime = duration_cast<milliseconds>(nextRound - boot_clock::now());
         if (waitTime > milliseconds::zero()) {
 #ifdef LOG_TASKS
             Serial.printf("Sleeping for %ld ms\n", (long) waitTime.count());
@@ -170,12 +172,12 @@ private:
         }
 
         Task& task;
-        time_point<steady_clock> next;
+        time_point<boot_clock> next;
     };
 
     const milliseconds maxSleepTime;
     std::list<TaskEntry> tasks;
-    time_point<steady_clock> previousRound;
+    time_point<boot_clock> previousRound;
 };
 
 }}    // namespace farmhub::client
