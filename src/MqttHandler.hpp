@@ -11,6 +11,7 @@
 #include <functional>
 #include <list>
 
+#include <MdnsHandler.hpp>
 #include <Task.hpp>
 
 #define MQTT_BUFFER_SIZE 2048
@@ -25,8 +26,9 @@ namespace farmhub { namespace client {
 class MqttHandler
     : public Task {
 public:
-    MqttHandler(const std::function<void(const JsonObject&)> onAppConfigChange)
+    MqttHandler(MdnsHandler& mdns, const std::function<void(const JsonObject&)> onAppConfigChange)
         : Task("MQTT")
+        , mdns(mdns)
         , mqttClient(MQTT_BUFFER_SIZE)
         , onAppConfigChange(onAppConfigChange) {
     }
@@ -144,37 +146,28 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
-        String mdnsHost = config.getHost();
-        int portNumber = config.getPort();
-        IPAddress address;
-        if (mdnsHost.isEmpty()) {
-            auto count = MDNS.queryService("mqtt", "tcp");
-            if (count > 0) {
-                Serial.println("Found MQTT services via mDNS, choosing first:");
-                for (int i = 0; i < count; i++) {
-                    Serial.printf("  %d) %s:%d (%s)\n",
-                        i + 1, MDNS.hostname(i).c_str(), MDNS.port(i), MDNS.IP(i).toString().c_str());
-                }
-                address = MDNS.IP(0);
-                portNumber = (int) MDNS.port(0);
-            } else {
+        String hostname = config.getHost();
+        if (hostname.isEmpty()) {
+            bool found = mdns.withService(
+                "mqtt", "tcp",
+                [&](const String& hostname, const IPAddress& address, uint16_t port) {
+                    Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
+                    mqttClient.setHost(address, port);
+                });
+
+            if (!found) {
                 Serial.println("No MQTT services found via mDNS");
                 return false;
             }
-        }
-        if (address == IPAddress()) {
-            if (mdnsHost.endsWith(".local")) {
-                mdnsHost = mdnsHost.substring(0, mdnsHost.length() - 6);
-            }
-            address = MDNS.queryHost(mdnsHost);
-        }
-        Serial.print("Connecting to MQTT broker at ");
-        if (address == IPAddress()) {
-            Serial.printf("%s:%d", config.getHost().c_str(), portNumber);
-            mqttClient.setHost(config.getHost().c_str(), portNumber);
         } else {
-            Serial.printf("%s:%d", address.toString().c_str(), portNumber);
-            mqttClient.setHost(address, portNumber);
+            int port = config.getPort();
+            bool found = mdns.withHost(hostname, [&, port](const IPAddress& address) {
+                Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
+                mqttClient.setHost(address, port);
+            });
+            if (!found) {
+                return false;
+            }
         }
         Serial.print("...");
 
@@ -244,6 +237,7 @@ private:
         Property<String> topic;
     };
 
+    MdnsHandler mdns;
     WiFiClient client;
     MQTTClient mqttClient;
     MqttConfig config;
