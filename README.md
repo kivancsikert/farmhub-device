@@ -1,5 +1,7 @@
 # FarmHub IoT platform client
 
+[![PlatformIO CI](https://github.com/kivancsikert/farmhub-client/actions/workflows/build.yml/badge.svg)](https://github.com/kivancsikert/farmhub-client/actions/workflows/build.yml)
+
 FarmHub is an ecosystem of IoT devices built around a local hub installed at the farm.
 The hub provides services like an MQTT broker and NTP to the devices via a reliable WIFI connection.
 The hub itself is the only device connected to the internet, and manages problems with unreliable internet connection.
