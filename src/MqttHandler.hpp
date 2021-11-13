@@ -195,7 +195,7 @@ private:
     class MqttConfig : public FileConfiguration {
     public:
         MqttConfig()
-            : FileConfiguration("/mqtt-config.json")
+            : FileConfiguration("MQTT", "/mqtt-config.json")
             , host(serializer, "host", "")
             , port(serializer, "port", 1883)
             , clientId(serializer, "clientId", "")

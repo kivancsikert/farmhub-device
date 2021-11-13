@@ -95,17 +95,47 @@ private:
 
 class Configuration {
 public:
-    Configuration() = default;
+    Configuration(const String& name, size_t capacity = 2048)
+        : capacity(capacity)
+        , name(name) {
+    }
+
+    virtual void update(const JsonObject& json) {
+        load(json);
+    }
 
 protected:
     ConfigurationSerializer serializer;
+
+    void load(const JsonObject& json) {
+        serializer.load(json);
+
+        // Print effective configuration
+        DynamicJsonDocument prettyJson(2048);
+        auto prettyRoot = prettyJson.to<JsonObject>();
+        serializer.storeMaskingSecrets(prettyRoot);
+        Serial.println("Effective " + name + " configuration:");
+        serializeJsonPretty(prettyJson, Serial);
+        Serial.println();
+
+        onLoad(json);
+    }
+
+    virtual void onLoad(const JsonObject& json) {
+        // Override if needed
+    }
+
+    const size_t capacity;
+
+private:
+    const String name;
 };
 
 class FileConfiguration : public Configuration {
 public:
-    FileConfiguration(const String& filename, size_t capacity = 2048)
-        : filename(filename)
-        , capacity(capacity) {
+    FileConfiguration(const String& name, const String& filename, size_t capacity = 2048)
+        : Configuration(name, capacity)
+        , filename(filename) {
     }
 
     void begin(bool reset = false) {
@@ -132,11 +162,12 @@ public:
         load(json.as<JsonObject>());
     }
 
-    void update(const JsonObject& json) {
-        load(json);
+    void update(const JsonObject& json) override {
+        Configuration::update(json);
         store();
     }
 
+private:
     void store() const {
         File file = SPIFFS.open(filename, FILE_WRITE);
         if (!file) {
@@ -150,28 +181,7 @@ public:
         serializeJson(json, file);
     }
 
-protected:
-    virtual void onLoad(const JsonObject& json) {
-        // Override if needed
-    }
-
-private:
-    void load(const JsonObject& json) {
-        serializer.load(json);
-
-        // Print effective configuration
-        DynamicJsonDocument prettyJson(2048);
-        auto prettyRoot = prettyJson.to<JsonObject>();
-        serializer.storeMaskingSecrets(prettyRoot);
-        Serial.println("Effective configuration for " + filename + ":");
-        serializeJsonPretty(prettyJson, Serial);
-        Serial.println();
-
-        onLoad(json);
-    }
-
     const String filename;
-    const size_t capacity;
 };
 
 }}    // namespace farmhub::client
