@@ -40,12 +40,13 @@ protected:
     Application(
         const String& name,
         const String& version,
+        Configuration& appConfig,
         WiFiProvider& wifiProvider,
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
         , wifiProvider(wifiProvider)
-        , mqtt(mdns, [&](const JsonObject& config) { configurationUpdated(config); })
+        , mqtt(mdns, appConfig)
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
@@ -58,9 +59,6 @@ protected:
 
     void addTask(Task& task) {
         tasks.add(task);
-    }
-
-    virtual void configurationUpdated(const JsonObject& config) {
     }
 
     const String name;

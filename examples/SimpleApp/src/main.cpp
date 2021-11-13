@@ -7,6 +7,13 @@
 
 using namespace farmhub::client;
 
+class SimpleAppConfig : public Configuration {
+public:
+    SimpleAppConfig()
+        : Configuration("application") {
+    }
+};
+
 class SimpleTelemetryProvider
     : public TelemetryProvider {
 protected:
@@ -39,7 +46,7 @@ protected:
 class SimpleApp : public Application {
 public:
     SimpleApp()
-        : Application("SimpleApp", "UNKNOWN", wifiProvider)
+        : Application("SimpleApp", "UNKNOWN", appConfig, wifiProvider)
         , telemetryPublisher(mqtt)
         , telemetryTask("Publish telemetry", seconds { 5 }, [&]() {
             telemetryPublisher.publish();
@@ -53,13 +60,8 @@ protected:
         telemetryPublisher.registerProvider(telemetry);
     }
 
-    void configurationUpdated(const JsonObject& json) override {
-        Serial.println("Received MQTT config");
-        serializeJsonPretty(json, Serial);
-        Serial.println();
-    }
-
 private:
+    SimpleAppConfig appConfig;
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
     TelemetryPublisher telemetryPublisher;
