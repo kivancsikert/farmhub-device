@@ -4,6 +4,8 @@
 #include <functional>
 #include <list>
 
+#include <Farmhub.hpp>
+
 using std::list;
 using std::ref;
 using std::reference_wrapper;
@@ -97,6 +99,52 @@ public:
 
 protected:
     ConfigurationSerializer serializer;
+};
+
+class FileConfiguration : public Configuration {
+public:
+    FileConfiguration(const String& filename)
+        : filename(filename) {
+    }
+
+    void begin() {
+        File file = SPIFFS.open(filename, FILE_READ);
+        if (!file) {
+            fatalError("Cannot open config file " + filename);
+            return;
+        }
+
+        DynamicJsonDocument json(file.size() * 2);
+        DeserializationError error = deserializeJson(json, file);
+        file.close();
+        if (error) {
+            Serial.println(file.readString());
+            fatalError("Failed to read config file " + filename + ": " + String(error.c_str()));
+            return;
+        }
+        serializer.load(json.as<JsonObject>());
+    }
+
+    void update(const JsonObject& json) {
+        serializer.load(json);
+        store();
+    }
+
+    void store() const {
+        File file = SPIFFS.open(filename, FILE_WRITE);
+        if (!file) {
+            fatalError("Cannot open config file " + filename);
+            return;
+        }
+
+        DynamicJsonDocument json(2048);
+        auto root = json.as<JsonObject>();
+        serializer.store(root);
+        serializeJson(json, file);
+    }
+
+private:
+    const String filename;
 };
 
 }}    // namespace farmhub::client

@@ -38,10 +38,10 @@ public:
         config.begin();
 
         Serial.printf("MQTT client ID is '%s', topic prefix is '%s'\n",
-            config.getClientId().c_str(), config.getTopic().c_str());
+            config.clientId.get().c_str(), config.topic.get().c_str());
 
-        String appConfigTopic = String(config.getTopic()) + "/config";
-        String commandTopicPrefix = String(config.getTopic()) + "/commands/";
+        String appConfigTopic = String(config.topic.get()) + "/config";
+        String commandTopicPrefix = String(config.topic.get()) + "/commands/";
 
         mqttClient.setKeepAlive(180);
         mqttClient.setCleanSession(true);
@@ -72,7 +72,7 @@ public:
     }
 
     bool publish(const String& topic, const JsonDocument& json, bool retain = false, int qos = 0) {
-        String fullTopic = config.getTopic() + "/" + topic;
+        String fullTopic = config.topic.get() + "/" + topic;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
             fullTopic.c_str(), (retain ? " (retain)" : ""), qos);
@@ -97,7 +97,7 @@ public:
         if (!mqttClient.connected()) {
             return false;
         }
-        String fullTopic = config.getTopic() + "/" + topic;
+        String fullTopic = config.topic.get() + "/" + topic;
         Serial.printf("Subscribing to MQTT topic '%s' with QOS = %d\n", fullTopic.c_str(), qos);
         bool success = mqttClient.subscribe(fullTopic.c_str(), qos);
         if (!success) {
@@ -146,7 +146,7 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
-        String hostname = config.getHost();
+        String hostname = config.host.get();
         if (hostname.isEmpty()) {
             bool found = mdns.withService(
                 "mqtt", "tcp",
@@ -160,7 +160,7 @@ private:
                 return false;
             }
         } else {
-            int port = config.getPort();
+            int port = config.port.get();
             bool found = mdns.withHost(hostname, [&, port](const IPAddress& address) {
                 Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
                 mqttClient.setHost(address, port);
@@ -171,7 +171,7 @@ private:
         }
         Serial.print("...");
 
-        bool result = mqttClient.connect(config.getClientId().c_str());
+        bool result = mqttClient.connect(config.clientId.get().c_str());
 
         if (!result) {
             Serial.printf(" failed, error = %d (check lwmqtt_err_t), return code = %d (check lwmqtt_return_code_t)\n",
@@ -192,45 +192,16 @@ private:
         return true;
     }
 
-    class MqttConfig : Configuration {
+    class MqttConfig : public FileConfiguration {
     public:
         MqttConfig()
-            : Configuration()
+            : FileConfiguration("/mqtt-config.json")
             , host(serializer, "host", "")
             , port(serializer, "port", 1883)
             , clientId(serializer, "clientId", "")
             , topic(serializer, "prefix", "") {
         }
 
-        void begin() {
-            File mqttConfigFile = SPIFFS.open("/mqtt-config.json", FILE_READ);
-            DynamicJsonDocument mqttConfigJson(mqttConfigFile.size() * 2);
-            DeserializationError error = deserializeJson(mqttConfigJson, mqttConfigFile);
-            mqttConfigFile.close();
-            if (error) {
-                Serial.println(mqttConfigFile.readString());
-                fatalError("Failed to read MQTT config file at /mqtt-config.json: " + String(error.c_str()));
-            }
-            serializer.load(mqttConfigJson.as<JsonObject>());
-        }
-
-        const String& getHost() const {
-            return host.get();
-        }
-
-        int getPort() const {
-            return port.get();
-        }
-
-        const String& getClientId() const {
-            return clientId.get();
-        }
-
-        const String& getTopic() const {
-            return topic.get();
-        }
-
-    private:
         Property<String> host;
         Property<int> port;
         Property<String> clientId;
