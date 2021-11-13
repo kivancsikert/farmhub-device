@@ -96,8 +96,8 @@ private:
 class Configuration {
 public:
     Configuration(const String& name, size_t capacity = 2048)
-        : capacity(capacity)
-        , name(name) {
+        : name(name)
+        , capacity(capacity) {
     }
 
     virtual void update(const JsonObject& json) {
@@ -125,10 +125,8 @@ protected:
         // Override if needed
     }
 
-    const size_t capacity;
-
-private:
     const String name;
+    const size_t capacity;
 };
 
 class FileConfiguration : public Configuration {
@@ -141,9 +139,9 @@ public:
     void begin(bool reset = false) {
         DynamicJsonDocument json(capacity);
         if (reset) {
-            Serial.println("Reset requested, falling back to default configuration");
+            Serial.println("Reset requested, falling back to default " + name + " configuration");
         } else if (!SPIFFS.exists(filename)) {
-            Serial.println("Configuration not found, falling back to default configuration");
+            Serial.println("The " + name + " configuration file " + filename + " was not found, falling back to defaults");
         } else {
             File file = SPIFFS.open(filename, FILE_READ);
             if (!file) {
