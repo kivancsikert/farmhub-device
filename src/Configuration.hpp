@@ -131,21 +131,21 @@ protected:
 
 class FileConfiguration : public Configuration {
 public:
-    FileConfiguration(const String& name, const String& filename, size_t capacity = 2048)
+    FileConfiguration(const String& name, const String& path, size_t capacity = 2048)
         : Configuration(name, capacity)
-        , filename(filename) {
+        , path(path) {
     }
 
     void begin(bool reset = false) {
         DynamicJsonDocument json(capacity);
         if (reset) {
             Serial.println("Reset requested, falling back to default " + name + " configuration");
-        } else if (!SPIFFS.exists(filename)) {
-            Serial.println("The " + name + " configuration file " + filename + " was not found, falling back to defaults");
+        } else if (!SPIFFS.exists(path)) {
+            Serial.println("The " + name + " configuration file " + path + " was not found, falling back to defaults");
         } else {
-            File file = SPIFFS.open(filename, FILE_READ);
+            File file = SPIFFS.open(path, FILE_READ);
             if (!file) {
-                fatalError("Cannot open config file " + filename);
+                fatalError("Cannot open config file " + path);
                 return;
             }
 
@@ -153,7 +153,7 @@ public:
             file.close();
             if (error) {
                 Serial.println(file.readString());
-                fatalError("Failed to read config file " + filename + ": " + String(error.c_str()));
+                fatalError("Failed to read config file " + path + ": " + String(error.c_str()));
                 return;
             }
         }
@@ -167,9 +167,9 @@ public:
 
 private:
     void store() const {
-        File file = SPIFFS.open(filename, FILE_WRITE);
+        File file = SPIFFS.open(path, FILE_WRITE);
         if (!file) {
-            fatalError("Cannot open config file " + filename);
+            fatalError("Cannot open config file " + path);
             return;
         }
 
@@ -179,7 +179,7 @@ private:
         serializeJson(json, file);
     }
 
-    const String filename;
+    const String path;
 };
 
 }}    // namespace farmhub::client

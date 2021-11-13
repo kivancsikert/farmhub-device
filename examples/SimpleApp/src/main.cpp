@@ -10,7 +10,7 @@ using namespace farmhub::client;
 class SimpleAppConfig : public FileConfiguration {
 public:
     SimpleAppConfig()
-        : FileConfiguration("application", "config.json") {
+        : FileConfiguration("application", "/config.json") {
     }
 };
 
