@@ -158,6 +158,15 @@ protected:
 private:
     void load(const JsonObject& json) {
         serializer.load(json);
+
+        // Print effective configuration
+        DynamicJsonDocument prettyJson(2048);
+        auto prettyRoot = prettyJson.to<JsonObject>();
+        serializer.storeMaskingSecrets(prettyRoot);
+        Serial.println("Effective configuration for " + filename + ":");
+        serializeJsonPretty(prettyJson, Serial);
+        Serial.println();
+
         onLoad(json);
     }
 
