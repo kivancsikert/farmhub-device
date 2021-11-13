@@ -103,24 +103,31 @@ protected:
 
 class FileConfiguration : public Configuration {
 public:
-    FileConfiguration(const String& filename)
-        : filename(filename) {
+    FileConfiguration(const String& filename, size_t capacity = 2048)
+        : filename(filename)
+        , capacity(capacity) {
     }
 
-    void begin() {
-        File file = SPIFFS.open(filename, FILE_READ);
-        if (!file) {
-            fatalError("Cannot open config file " + filename);
-            return;
-        }
+    void begin(bool reset = false) {
+        DynamicJsonDocument json(capacity);
+        if (reset) {
+            Serial.println("Reset requested, falling back to default configuration");
+        } else if (!SPIFFS.exists(filename)) {
+            Serial.println("Configuration not found, falling back to default configuration");
+        } else {
+            File file = SPIFFS.open(filename, FILE_READ);
+            if (!file) {
+                fatalError("Cannot open config file " + filename);
+                return;
+            }
 
-        DynamicJsonDocument json(file.size() * 2);
-        DeserializationError error = deserializeJson(json, file);
-        file.close();
-        if (error) {
-            Serial.println(file.readString());
-            fatalError("Failed to read config file " + filename + ": " + String(error.c_str()));
-            return;
+            DeserializationError error = deserializeJson(json, file);
+            file.close();
+            if (error) {
+                Serial.println(file.readString());
+                fatalError("Failed to read config file " + filename + ": " + String(error.c_str()));
+                return;
+            }
         }
         load(json.as<JsonObject>());
     }
@@ -137,7 +144,7 @@ public:
             return;
         }
 
-        DynamicJsonDocument json(2048);
+        DynamicJsonDocument json(capacity);
         auto root = json.as<JsonObject>();
         serializer.store(root);
         serializeJson(json, file);
@@ -155,6 +162,7 @@ private:
     }
 
     const String filename;
+    const size_t capacity;
 };
 
 }}    // namespace farmhub::client
