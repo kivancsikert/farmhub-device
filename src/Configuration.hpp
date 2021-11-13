@@ -122,11 +122,11 @@ public:
             fatalError("Failed to read config file " + filename + ": " + String(error.c_str()));
             return;
         }
-        serializer.load(json.as<JsonObject>());
+        load(json.as<JsonObject>());
     }
 
     void update(const JsonObject& json) {
-        serializer.load(json);
+        load(json);
         store();
     }
 
@@ -143,7 +143,17 @@ public:
         serializeJson(json, file);
     }
 
+protected:
+    virtual void onLoad(const JsonObject& json) {
+        // Override if needed
+    }
+
 private:
+    void load(const JsonObject& json) {
+        serializer.load(json);
+        onLoad(json);
+    }
+
     const String filename;
 };
 
