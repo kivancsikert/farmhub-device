@@ -23,7 +23,12 @@ public:
         Serial.printf("\nStarting %s version %s with hostname %s\n", name.c_str(), version.c_str(), hostname.c_str());
 
         beginFileSystem();
-        appConfig.begin();
+        if (isResetPressed()) {
+            Serial.println("Reset button pressed, skipping configuration");
+            appConfig.reset();
+        } else {
+            appConfig.begin();
+        }
         wifiProvider.begin();
         WiFi.setHostname(hostname.c_str());
         mdns.begin(hostname);
@@ -61,6 +66,10 @@ protected:
 
     void addTask(Task& task) {
         tasks.add(task);
+    }
+
+    virtual bool isResetPressed() {
+        return false;
     }
 
     const String name;

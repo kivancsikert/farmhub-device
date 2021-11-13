@@ -100,6 +100,11 @@ public:
         , capacity(capacity) {
     }
 
+    void reset() {
+        DynamicJsonDocument json(capacity);
+        load(json.to<JsonObject>());
+    }
+
     virtual void update(const JsonObject& json) {
         load(json);
     }
@@ -136,11 +141,9 @@ public:
         , path(path) {
     }
 
-    void begin(bool reset = false) {
+    void begin() {
         DynamicJsonDocument json(capacity);
-        if (reset) {
-            Serial.println("Reset requested, falling back to default " + name + " configuration");
-        } else if (!SPIFFS.exists(path)) {
+        if (!SPIFFS.exists(path)) {
             Serial.println("The " + name + " configuration file " + path + " was not found, falling back to defaults");
         } else {
             File file = SPIFFS.open(path, FILE_READ);
