@@ -23,6 +23,12 @@ public:
         Serial.printf("\nStarting %s version %s with hostname %s\n", name.c_str(), version.c_str(), hostname.c_str());
 
         beginFileSystem();
+        if (isResetPressed()) {
+            Serial.println("Reset button pressed, skipping configuration");
+            appConfig.reset();
+        } else {
+            appConfig.begin();
+        }
         wifiProvider.begin();
         WiFi.setHostname(hostname.c_str());
         mdns.begin(hostname);
@@ -40,12 +46,14 @@ protected:
     Application(
         const String& name,
         const String& version,
+        FileConfiguration& appConfig,
         WiFiProvider& wifiProvider,
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
+        , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqtt(mdns, [&](const JsonObject& config) { configurationUpdated(config); })
+        , mqtt(mdns, appConfig)
         , echoCommand(mqtt)
         , fileCommands(mqtt)
         , httpUpdateCommand(mqtt, version)
@@ -60,11 +68,13 @@ protected:
         tasks.add(task);
     }
 
-    virtual void configurationUpdated(const JsonObject& config) {
+    virtual bool isResetPressed() {
+        return false;
     }
 
     const String name;
     const String version;
+    FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
     MdnsHandler mdns;
 

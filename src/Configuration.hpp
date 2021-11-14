@@ -4,6 +4,8 @@
 #include <functional>
 #include <list>
 
+#include <Farmhub.hpp>
+
 using std::list;
 using std::ref;
 using std::reference_wrapper;
@@ -93,10 +95,94 @@ private:
 
 class Configuration {
 public:
-    Configuration() = default;
+    Configuration(const String& name, size_t capacity = 2048)
+        : name(name)
+        , capacity(capacity) {
+    }
+
+    void reset() {
+        DynamicJsonDocument json(capacity);
+        load(json.to<JsonObject>());
+    }
+
+    virtual void update(const JsonObject& json) {
+        load(json);
+    }
 
 protected:
     ConfigurationSerializer serializer;
+
+    void load(const JsonObject& json) {
+        serializer.load(json);
+
+        // Print effective configuration
+        DynamicJsonDocument prettyJson(2048);
+        auto prettyRoot = prettyJson.to<JsonObject>();
+        serializer.storeMaskingSecrets(prettyRoot);
+        Serial.println("Effective " + name + " configuration:");
+        serializeJsonPretty(prettyJson, Serial);
+        Serial.println();
+
+        onLoad(json);
+    }
+
+    virtual void onLoad(const JsonObject& json) {
+        // Override if needed
+    }
+
+    const String name;
+    const size_t capacity;
+};
+
+class FileConfiguration : public Configuration {
+public:
+    FileConfiguration(const String& name, const String& path, size_t capacity = 2048)
+        : Configuration(name, capacity)
+        , path(path) {
+    }
+
+    void begin() {
+        DynamicJsonDocument json(capacity);
+        if (!SPIFFS.exists(path)) {
+            Serial.println("The " + name + " configuration file " + path + " was not found, falling back to defaults");
+        } else {
+            File file = SPIFFS.open(path, FILE_READ);
+            if (!file) {
+                fatalError("Cannot open config file " + path);
+                return;
+            }
+
+            DeserializationError error = deserializeJson(json, file);
+            file.close();
+            if (error) {
+                Serial.println(file.readString());
+                fatalError("Failed to read config file " + path + ": " + String(error.c_str()));
+                return;
+            }
+        }
+        load(json.as<JsonObject>());
+    }
+
+    void update(const JsonObject& json) override {
+        Configuration::update(json);
+        store();
+    }
+
+private:
+    void store() const {
+        File file = SPIFFS.open(path, FILE_WRITE);
+        if (!file) {
+            fatalError("Cannot open config file " + path);
+            return;
+        }
+
+        DynamicJsonDocument json(capacity);
+        auto root = json.as<JsonObject>();
+        serializer.store(root);
+        serializeJson(json, file);
+    }
+
+    const String path;
 };
 
 }}    // namespace farmhub::client
