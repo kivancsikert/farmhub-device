@@ -39,7 +39,7 @@ protected:
         Serial.printf("Simple app has been running for %ld seconds (drift %ld us)\n",
             (long) duration_cast<seconds>(now.time_since_epoch()).count(),
             (long) drift.count());
-        return repeatAsapAfter(seconds { 10 });
+        return sleepFor(seconds { 10 });
     }
 };
 

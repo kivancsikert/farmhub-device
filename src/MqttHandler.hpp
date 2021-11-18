@@ -115,13 +115,13 @@ protected:
     const Schedule loop(time_point<boot_clock> scheduledTime) override {
         if (WiFi.status() != WL_CONNECTED) {
             Serial.println("Waiting to connect to MQTT until WIFI is available");
-            return repeatAsapAfter(seconds { 1 });
+            return sleepFor(seconds { 1 });
         }
 
         if (!mqttClient.connected()) {
             if (!tryConnect()) {
                 // Try connecting again in 10 seconds
-                return repeatAsapAfter(seconds { 10 });
+                return sleepFor(seconds { 10 });
             }
         }
 
@@ -139,7 +139,7 @@ protected:
 
         mqttClient.loop();
         // TODO We could repeat sooner if we couldn't publish everything
-        return repeatAsapAfter(milliseconds { MQTT_POLL_FREQUENCY });
+        return sleepFor(milliseconds { MQTT_POLL_FREQUENCY });
     }
 
 private:

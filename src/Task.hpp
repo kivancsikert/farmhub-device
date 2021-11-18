@@ -58,16 +58,40 @@ protected:
     virtual const Schedule loop(time_point<boot_clock> scheduledTime) = 0;
     friend class TaskContainer;
 
-    static const Schedule repeatImmediately() {
-        return Schedule(ScheduleType::AFTER, microseconds(0));
+    /**
+     * @brief Repeat the task immediately after running other tasks.
+     */
+    static const Schedule yieldImmediately() {
+        return Schedule(ScheduleType::AFTER, microseconds::zero());
     }
 
-    static const Schedule repeatAsapAfter(microseconds delay) {
+    /**
+     * @brief Repeat the task as soon as possible after a given delay.
+     *
+     * It is guaranteed that the task will not repeat before the given delay.
+     * The delay might be longer than specified if other tasks take longer to execute.
+     */
+    static const Schedule sleepFor(microseconds delay) {
         return Schedule(ScheduleType::AFTER, delay);
     }
 
-    static const Schedule repeatAlapBefore(microseconds delay) {
+    /**
+     * @brief Repeat the task as late as possible before the given delay.
+     *
+     * We will execute the task again either after the given delay,
+     * or when another task gets scheduled (whichever happens earlier).
+     */
+    static const Schedule sleepAtMost(microseconds delay) {
         return Schedule(ScheduleType::BEFORE, delay);
+    }
+
+    /**
+     * @brief Repeat the task as late as possible.
+     *
+     * We will execute the task again when another task gets scheduled.
+     */
+    static const Schedule sleepIndefinitely() {
+        return Schedule(ScheduleType::BEFORE, hours { 24 * 365 * 100 });
     }
 };
 
@@ -83,7 +107,7 @@ public:
 protected:
     const Schedule loop(time_point<boot_clock> scheduledTime) override {
         callback();
-        return repeatAsapAfter(delay);
+        return sleepFor(delay);
     }
 
 private:
