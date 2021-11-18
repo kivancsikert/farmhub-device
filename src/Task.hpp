@@ -61,8 +61,8 @@ protected:
     /**
      * @brief Repeat the task immediately after running other tasks.
      */
-    static const Schedule repeatImmediately() {
-        return Schedule(ScheduleType::AFTER, microseconds(0));
+    static const Schedule yieldImmediately() {
+        return Schedule(ScheduleType::AFTER, microseconds::zero());
     }
 
     /**
@@ -71,7 +71,7 @@ protected:
      * It is guaranteed that the task will not repeat before the given delay.
      * The delay might be longer than specified if other tasks take longer to execute.
      */
-    static const Schedule repeatAsapAfter(microseconds delay) {
+    static const Schedule sleepFor(microseconds delay) {
         return Schedule(ScheduleType::AFTER, delay);
     }
 
@@ -81,7 +81,7 @@ protected:
      * We will execute the task again either after the given delay,
      * or when another task gets scheduled (whichever happens earlier).
      */
-    static const Schedule repeatAlapBefore(microseconds delay) {
+    static const Schedule sleepAtMost(microseconds delay) {
         return Schedule(ScheduleType::BEFORE, delay);
     }
 
@@ -90,7 +90,7 @@ protected:
      *
      * We will execute the task again when another task gets scheduled.
      */
-    static const Schedule repeatAlap() {
+    static const Schedule sleepIndefinitely() {
         return Schedule(ScheduleType::BEFORE, microseconds::max());
     }
 };
@@ -107,7 +107,7 @@ public:
 protected:
     const Schedule loop(time_point<boot_clock> scheduledTime) override {
         callback();
-        return repeatAsapAfter(delay);
+        return sleepFor(delay);
     }
 
 private:

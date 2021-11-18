@@ -52,8 +52,8 @@ public:
     const Schedule loop(time_point<boot_clock> scheduledTime) override {
         ArduinoOTA.handle();
         return updating
-            ? repeatImmediately()
-            : repeatAsapAfter(seconds { 1 });
+            ? yieldImmediately()
+            : sleepFor(seconds { 1 });
     }
 
 private:
