@@ -180,6 +180,7 @@ private:
         auto root = json.as<JsonObject>();
         serializer.store(root);
         serializeJson(json, file);
+        file.close();
     }
 
     const String path;
