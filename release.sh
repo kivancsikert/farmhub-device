@@ -26,5 +26,5 @@ jq ".version = \"$VERSION_TAG\"" library.json | sponge library.json
 git add library.json
 git commit -m "Prepare release $VERSION_TAG"
 
-git tag -a "$VERSION_TAG" -m "Release $VERSION_TAG"
-git push origin "$VERSION_TAG" main
+git tag -a -f "$VERSION_TAG" -m "Release $VERSION_TAG"
+git push -f origin "$VERSION_TAG" main
