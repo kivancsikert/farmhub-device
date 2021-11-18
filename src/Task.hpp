@@ -91,7 +91,7 @@ protected:
      * We will execute the task again when another task gets scheduled.
      */
     static const Schedule sleepIndefinitely() {
-        return Schedule(ScheduleType::BEFORE, microseconds::max());
+        return Schedule(ScheduleType::BEFORE, hours { 24 * 365 * 100 });
     }
 };
 
