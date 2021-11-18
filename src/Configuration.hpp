@@ -177,9 +177,10 @@ private:
         }
 
         DynamicJsonDocument json(capacity);
-        auto root = json.as<JsonObject>();
+        auto root = json.to<JsonObject>();
         serializer.store(root);
         serializeJson(json, file);
+        file.close();
     }
 
     const String path;
