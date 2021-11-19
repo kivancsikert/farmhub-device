@@ -31,7 +31,7 @@ public:
         }
         wifiProvider.begin();
         WiFi.setHostname(hostname.c_str());
-        mdns.begin(hostname);
+        mdns.begin(hostname, name, version);
         ota.begin(hostname);
         mqtt.begin();
 
