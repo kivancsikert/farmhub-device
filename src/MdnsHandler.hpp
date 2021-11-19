@@ -10,8 +10,10 @@ class MdnsHandler {
 public:
     MdnsHandler() = default;
 
-    void begin(const String& hostname) {
+    void begin(const String& hostname, const String& instanceName, const String& version) {
         MDNS.begin(hostname.c_str());
+        MDNS.setInstanceName(instanceName);
+        MDNS.addServiceTxt("arduino", "tcp", "version", version);
     }
 
     // Lookup host name via MDNS explicitly
