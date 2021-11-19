@@ -55,10 +55,18 @@ public:
             if (topic == appConfigTopic) {
                 appConfig.update(json.as<JsonObject>());
             } else if (topic.startsWith(commandTopicPrefix)) {
+                if (payload.isEmpty()) {
+#ifdef DUMP_MQTT
+                    Serial.println("Ignoring empty payload");
+#endif
+                    return;
+                }
                 auto command = topic.substring(commandTopicPrefix.length());
                 Serial.printf("Received command '%s'\n", command.c_str());
                 for (auto handler : commandHandlers) {
                     if (handler.command == command) {
+                        // Clear command topic
+                        mqttClient.publish(topic, "", true, 0);
                         handler.handle(json.as<JsonObject>());
                         return;
                     }
@@ -126,7 +134,7 @@ protected:
         }
 
         while (!publishQueue.isEmpty()) {
-            MqttMessage message = publishQueue.pop();
+            const MqttMessage& message = publishQueue.pop();
             bool success = mqttClient.publish(message.topic, message.payload, message.retain, message.qos);
 #ifdef DUMP_MQTT
             Serial.printf("Published to '%s' (size: %d)\n", message.topic.c_str(), message.payload.length());
