@@ -37,12 +37,23 @@ public:
             : FileConfiguration("device", path, capacity)
             , type(serializer, "type", defaultType)
             , model(serializer, "model", defaultModel)
-            , instance(serializer, "instance", defaultInstance) {
+            , instance(serializer, "instance", defaultInstance)
+            , description(serializer, "description", "")
+            , mqttHost(serializer, "mqttHost", "")
+            , mqttPort(serializer, "mqttPort", 1883)
+            , mqttClientId(serializer, "mqttClientId", "")
+            , mqttTopic(serializer, "mqttTopic", "") {
         }
 
         Property<String> type;
         Property<String> model;
         Property<String> instance;
+        Property<String> description;
+
+        Property<String> mqttHost;
+        Property<unsigned int> mqttPort;
+        Property<String> mqttClientId;
+        Property<String> mqttTopic;
 
         virtual bool isResetButtonPressed() {
             return false;
@@ -94,7 +105,15 @@ protected:
         WiFi.setHostname(hostname.c_str());
         mdnsHandler.begin(hostname, name, version);
         otaHandler.begin(hostname);
-        mqttHandler.begin();
+        mqttHandler.begin(
+            deviceConfig.mqttHost.get(),
+            deviceConfig.mqttPort.get(),
+            deviceConfig.mqttClientId.get().isEmpty()
+                ? deviceConfig.type.get() + "-" + deviceConfig.instance.get()
+                : deviceConfig.mqttClientId.get(),
+            deviceConfig.mqttTopic.get().isEmpty()
+                ? "devices/" + deviceConfig.type.get() + "/" + deviceConfig.instance.get()
+                : deviceConfig.mqttTopic.get());
 
         mqttHandler.publish(
             "init", [&](JsonObject& json) {

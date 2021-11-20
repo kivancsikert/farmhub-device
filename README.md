@@ -33,28 +33,25 @@ Basic configuration is provided in `BaseDeviceConfig` that can be extended by th
 {
     "type": "chicken-door", // type of device
     "model": "mk1", // hardware variant
-    "description": "Chicken door" // human-readable description
+    "instance": "default", // the instance name
+    "description": "Chicken door", // human-readable description
+    "mqttHost": "...", // broker host name, look up via mDNS if omitted
+    "mqttPort": 1883, // broker port, defaults to 1883
+    "mqttClientId": "chicken-door", // client ID, defaults to "$type-$instance" if omitted
+    "mqttTopic": "devices/chicken-door" // topic prefix, defaults to "devices/$type/$instance" if omitted
 }
 ```
 
-### MQTT configuration
+#### Zeroconf
 
-`MqttHandler` reads this configuration file under `mqtt-config.json`:
-
-```jsonc
-{
-    "host": "...", // broker host name
-    "port": 1883, // broker port, defaults to 1883
-    "clientId": "chicken-door", // client ID
-    "prefix": "devices/chicken-door" // topic prefix
-}
-```
-
-If the `host` parameter is omitted, we'll try to look up the first MQTT server via mDNS.
+If the `mqttHost` parameter is omitted or left empty, we'll try to look up the first MQTT server via mDNS.
 If we find a hit, we'll also use the port specified in mDNS.
 If there are multiple hits, the first one is used.
 
+If `mqttClientId` is omitted, we make up an ID from the device type and instance name.
+If `mqttTopic` is omitted, we also invent one using device type and instance name.
+
 ### Application configuration
 
-Applications typically require custom configuration.
+Applications typically require custom configuration that can be manipulated remotely.
 This can be stored in JSON format in `config.json` locally, and is automatically synced with the retained `$TOPIC_PREFIX/config` topic.

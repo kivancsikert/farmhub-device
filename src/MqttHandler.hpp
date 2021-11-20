@@ -3,14 +3,13 @@
 #include <ArduinoJson.h>
 #include <CircularBuffer.h>
 #include <Client.h>
-#include <Configuration.hpp>
-#include <ESPmDNS.h>
 #include <MQTT.h>
 #include <WiFi.h>
 #include <chrono>
 #include <functional>
 #include <list>
 
+#include <Configuration.hpp>
 #include <MdnsHandler.hpp>
 #include <Task.hpp>
 
@@ -33,15 +32,17 @@ public:
         , appConfig(appConfig) {
     }
 
-    void begin() {
-        Serial.println("Initializing MQTT connector...");
-        config.begin();
-
+    void begin(String hostname, unsigned int port, String clientId, String topic) {
         Serial.printf("MQTT client ID is '%s', topic prefix is '%s'\n",
-            config.clientId.get().c_str(), config.topic.get().c_str());
+            clientId.c_str(), topic.c_str());
 
-        String appConfigTopic = String(config.topic.get()) + "/config";
-        String commandTopicPrefix = String(config.topic.get()) + "/commands/";
+        this->hostname = hostname;
+        this->port = port;
+        this->clientId = clientId;
+        this->topic = topic;
+
+        String appConfigTopic = topic + "/config";
+        String commandTopicPrefix = topic + "/commands/";
 
         mqttClient.setKeepAlive(180);
         mqttClient.setCleanSession(true);
@@ -79,8 +80,8 @@ public:
         mqttClient.begin(client);
     }
 
-    bool publish(const String& topic, const JsonDocument& json, bool retain = false, int qos = 0) {
-        String fullTopic = config.topic.get() + "/" + topic;
+    bool publish(const String& suffix, const JsonDocument& json, bool retain = false, int qos = 0) {
+        String fullTopic = topic + "/" + suffix;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
             fullTopic.c_str(), (retain ? " (retain)" : ""), qos);
@@ -94,18 +95,18 @@ public:
         return storedWithoutDropping;
     }
 
-    bool publish(const String& topic, std::function<void(JsonObject&)> populate, bool retain = false, int qos = 0, int size = MQTT_BUFFER_SIZE) {
+    bool publish(const String& suffix, std::function<void(JsonObject&)> populate, bool retain = false, int qos = 0, int size = MQTT_BUFFER_SIZE) {
         DynamicJsonDocument doc(size);
         JsonObject root = doc.to<JsonObject>();
         populate(root);
-        return publish(topic, doc, retain, qos);
+        return publish(suffix, doc, retain, qos);
     }
 
-    bool subscribe(const String& topic, int qos) {
+    bool subscribe(const String& suffix, int qos) {
         if (!mqttClient.connected()) {
             return false;
         }
-        String fullTopic = config.topic.get() + "/" + topic;
+        String fullTopic = topic + "/" + suffix;
         Serial.printf("Subscribing to MQTT topic '%s' with QOS = %d\n", fullTopic.c_str(), qos);
         bool success = mqttClient.subscribe(fullTopic.c_str(), qos);
         if (!success) {
@@ -154,7 +155,6 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
-        String hostname = config.host.get();
         if (hostname.isEmpty()) {
             bool found = mdns.withService(
                 "mqtt", "tcp",
@@ -168,8 +168,7 @@ private:
                 return false;
             }
         } else {
-            int port = config.port.get();
-            bool found = mdns.withHost(hostname, [&, port](const IPAddress& address) {
+            bool found = mdns.withHost(hostname, [&](const IPAddress& address) {
                 Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
                 mqttClient.setHost(address, port);
             });
@@ -179,7 +178,7 @@ private:
         }
         Serial.print("...");
 
-        bool result = mqttClient.connect(config.clientId.get().c_str());
+        bool result = mqttClient.connect(clientId.c_str());
 
         if (!result) {
             Serial.printf(" failed, error = %d (check lwmqtt_err_t), return code = %d (check lwmqtt_return_code_t)\n",
@@ -200,26 +199,13 @@ private:
         return true;
     }
 
-    class MqttConfig : public FileConfiguration {
-    public:
-        MqttConfig()
-            : FileConfiguration("MQTT", "/mqtt-config.json")
-            , host(serializer, "host", "")
-            , port(serializer, "port", 1883)
-            , clientId(serializer, "clientId", "")
-            , topic(serializer, "prefix", "") {
-        }
-
-        Property<String> host;
-        Property<int> port;
-        Property<String> clientId;
-        Property<String> topic;
-    };
-
     MdnsHandler mdns;
     WiFiClient client;
     MQTTClient mqttClient;
-    MqttConfig config;
+    String hostname;
+    unsigned int port;
+    String clientId;
+    String topic;
     Configuration& appConfig;
 
     bool connecting = false;
