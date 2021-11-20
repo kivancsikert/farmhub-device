@@ -98,7 +98,7 @@ public:
         DynamicJsonDocument doc(size);
         JsonObject root = doc.to<JsonObject>();
         populate(root);
-        return publish(topic, doc);
+        return publish(topic, doc, retain, qos);
     }
 
     bool subscribe(const String& topic, int qos) {
