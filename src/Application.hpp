@@ -37,12 +37,14 @@ public:
             : FileConfiguration("device", path, capacity)
             , type(serializer, "type", defaultType)
             , model(serializer, "model", defaultModel)
-            , instance(serializer, "instance", defaultInstance) {
+            , instance(serializer, "instance", defaultInstance)
+            , description(serializer, "description", "") {
         }
 
         Property<String> type;
         Property<String> model;
         Property<String> instance;
+        Property<String> description;
 
         virtual bool isResetButtonPressed() {
             return false;
