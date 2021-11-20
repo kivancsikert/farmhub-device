@@ -74,11 +74,16 @@ protected:
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
         , mqttHandler(mdnsHandler, appConfig)
-        , echoCommand(mqttHandler)
-        , fileCommands(mqttHandler)
-        , httpUpdateCommand(mqttHandler, version)
-        , restartCommand(mqttHandler)
+        , httpUpdateCommand(version)
         , tasks(maxSleepTime) {
+
+        mqttHandler.registerCommand("echo", echoCommand);
+        mqttHandler.registerCommand("restart", restartCommand);
+        mqttHandler.registerCommand("files/list", fileListCommand);
+        mqttHandler.registerCommand("files/read", fileReadCommand);
+        mqttHandler.registerCommand("files/write", fileWriteCommand);
+        mqttHandler.registerCommand("files/remove", fileRemoveCommand);
+        mqttHandler.registerCommand("update", httpUpdateCommand);
 
         addTask(otaHandler);
         addTask(mqttHandler);
@@ -153,7 +158,10 @@ private:
     MdnsHandler mdnsHandler;
     MqttHandler mqttHandler;
     commands::EchoCommand echoCommand;
-    commands::FileCommands fileCommands;
+    commands::FileListCommand fileListCommand;
+    commands::FileReadCommand fileReadCommand;
+    commands::FileWriteCommand fileWriteCommand;
+    commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
     OtaHandler otaHandler;

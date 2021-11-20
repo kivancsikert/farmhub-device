@@ -68,7 +68,13 @@ public:
                     if (handler.command == command) {
                         // Clear command topic
                         mqttClient.publish(topic, "", true, 0);
-                        handler.handle(json.as<JsonObject>());
+                        auto request = json.as<JsonObject>();
+                        DynamicJsonDocument responseDoc(2048);
+                        auto response = responseDoc.to<JsonObject>();
+                        handler.handle(request, response);
+                        if (response.size() > 0) {
+                            publish("responses/" + command, responseDoc);
+                        }
                         return;
                     }
                 }
@@ -116,8 +122,19 @@ public:
         return success;
     }
 
-    void registerCommand(const String command, std::function<void(const JsonObject&)> handle) {
+    void registerCommand(const String command, std::function<void(const JsonObject&, JsonObject&)> handle) {
         commandHandlers.emplace_back(command, handle);
+    }
+
+    class Command {
+    public:
+        virtual void handle(const JsonObject& request, JsonObject& response) = 0;
+    };
+
+    void registerCommand(const String command, Command& handler) {
+        registerCommand(command, [&](const JsonObject& request, JsonObject& response) {
+            handler.handle(request, response);
+        });
     }
 
 protected:
@@ -211,13 +228,13 @@ private:
     bool connecting = false;
 
     struct CommandHandler {
-        CommandHandler(const String& command, std::function<void(const JsonObject&)> handle)
+        CommandHandler(const String& command, std::function<void(const JsonObject&, JsonObject&)> handle)
             : command(command)
             , handle(handle) {
         }
 
         const String command;
-        const std::function<void(const JsonObject&)> handle;
+        const std::function<void(const JsonObject&, JsonObject&)> handle;
     };
 
     std::list<CommandHandler> commandHandlers;

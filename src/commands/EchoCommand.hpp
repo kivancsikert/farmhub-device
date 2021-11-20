@@ -4,19 +4,11 @@
 
 namespace farmhub { namespace client { namespace commands {
 
-class EchoCommand {
+class EchoCommand : public MqttHandler::Command {
 public:
-    EchoCommand(MqttHandler& mqtt)
-        : mqtt(mqtt) {
-        mqtt.registerCommand("echo", [&](const JsonObject& command) {
-            mqtt.publish("events/echo", [command](JsonObject& event) {
-                event["original"] = command;
-            });
-        });
+    void handle(const JsonObject& request, JsonObject& response) override {
+        response["original"] = request;
     }
-
-private:
-    MqttHandler& mqtt;
 };
 
 }}}    // namespace farmhub::client::commands

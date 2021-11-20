@@ -58,6 +58,7 @@ This can be stored in JSON format in `config.json` locally, and is automatically
 
 FarmHub devices support remote commands via MQTT.
 Commands are triggered via retained MQTT messages sent to `$TOPIC_PREFIX/commands/$COMMAND`.
+They typically respond under `$TOPIC_PREFIX/responses/$COMMAND`.
 
 Once the device receives a command it deletes the retained message.
 This allows commands to be sent to sleeping devices.
@@ -66,7 +67,7 @@ There are a few commands supported out-of-the-box:
 
 ### Echo
 
-Whatever JSON you send to `commands/echo`, it will return it under `events/echo`.
+Whatever JSON you send to `commands/echo`, it will return it under `responses/echo`.
 
 See `EchoCommand` for more information.
 
