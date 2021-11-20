@@ -7,10 +7,9 @@
 
 namespace farmhub { namespace client { namespace commands {
 
-class FileCommands {
+class FileListCommand : public MqttHandler::Command {
 public:
-    FileCommands(MqttHandler& mqtt) {
-        mqtt.registerCommand("files/list", [](const JsonObject& request, JsonObject& response) {
+    void handle(const JsonObject& request, JsonObject& response) override {
             File root = SPIFFS.open("/", FILE_READ);
             JsonArray files = response.createNestedArray("files");
             while (true) {
@@ -26,23 +25,31 @@ public:
                     : "file";
                 entry.close();
             }
-        });
-        mqtt.registerCommand("files/read", [](const JsonObject& request, JsonObject& response) {
-            String path = request["path"];
-            if (!path.startsWith("/")) {
-                path = "/" + path;
-            }
-            Serial.printf("Reading %s\n", path.c_str());
-            response["path"] = path;
-            File file = SPIFFS.open(path, FILE_READ);
-            if (file) {
-                response["size"] = file.size();
-                response["contents"] = file.readString();
-            } else {
-                response["error"] = "File not found";
-            }
-        });
-        mqtt.registerCommand("files/write", [](const JsonObject& request, JsonObject& response) {
+    }
+};
+
+class FileReadCommand : public MqttHandler::Command {
+public:
+    void handle(const JsonObject& request, JsonObject& response) override {
+        String path = request["path"];
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        Serial.printf("Reading %s\n", path.c_str());
+        response["path"] = path;
+        File file = SPIFFS.open(path, FILE_READ);
+        if (file) {
+            response["size"] = file.size();
+            response["contents"] = file.readString();
+        } else {
+            response["error"] = "File not found";
+        }
+    }
+};
+
+class FileWriteCommand : public MqttHandler::Command {
+public:
+    void handle(const JsonObject& request, JsonObject& response) override {
             String path = request["path"];
             if (!path.startsWith("/")) {
                 path = "/" + path;
@@ -59,20 +66,23 @@ public:
             } else {
                 response["error"] = "File not found";
             }
-        });
-        mqtt.registerCommand("files/remove", [](const JsonObject& request, JsonObject& response) {
-            String path = request["path"];
-            if (!path.startsWith("/")) {
-                path = "/" + path;
-            }
-            Serial.printf("Removing %s\n", path.c_str());
-            response["path"] = path;
-            if (SPIFFS.remove(path)) {
-                response["removed"] = true;
-            } else {
-                response["error"] = "File not found";
-            }
-        });
+    }
+};
+
+class FileRemoveCommand : public MqttHandler::Command {
+public:
+    void handle(const JsonObject& request, JsonObject& response) override {
+        String path = request["path"];
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        Serial.printf("Removing %s\n", path.c_str());
+        response["path"] = path;
+        if (SPIFFS.remove(path)) {
+            response["removed"] = true;
+        } else {
+            response["error"] = "File not found";
+        }
     }
 };
 

@@ -126,6 +126,17 @@ public:
         commandHandlers.emplace_back(command, handle);
     }
 
+    class Command {
+    public:
+        virtual void handle(const JsonObject& request, JsonObject& response) = 0;
+    };
+
+    void registerCommand(const String command, Command& handler) {
+        registerCommand(command, [&](const JsonObject& request, JsonObject& response) {
+            handler.handle(request, response);
+        });
+    }
+
 protected:
     const Schedule loop(time_point<boot_clock> scheduledTime) override {
         if (WiFi.status() != WL_CONNECTED) {

@@ -4,13 +4,11 @@
 
 namespace farmhub { namespace client { namespace commands {
 
-class RestartCommand {
+class RestartCommand : public MqttHandler::Command {
 public:
-    RestartCommand(MqttHandler& mqtt) {
-        mqtt.registerCommand("restart", [&](const JsonObject& request, JsonObject& response) {
-            Serial.flush();
-            ESP.restart();
-        });
+    void handle(const JsonObject& request, JsonObject& response) override {
+        Serial.flush();
+        ESP.restart();
     }
 };
 

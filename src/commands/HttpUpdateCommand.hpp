@@ -7,22 +7,24 @@
 
 namespace farmhub { namespace client { namespace commands {
 
-class HttpUpdateCommand {
+class HttpUpdateCommand : public MqttHandler::Command {
 public:
-    HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion) {
+    HttpUpdateCommand(const String& currentVersion)
+        : currentVersion(currentVersion) {
+    }
+
+    void handle(const JsonObject& request, JsonObject& response) override {
+        if (!request.containsKey("url")) {
+            Serial.println("Command contains no URL");
+            return;
+        }
+        String url = request["url"];
+        if (url.length() == 0) {
+            Serial.println("Command contains empty url");
+            return;
+        }
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-        mqtt.registerCommand("update", [currentVersion](const JsonObject& request, JsonObject& response) {
-            if (!request.containsKey("url")) {
-                Serial.println("Command contains no URL");
-                return;
-            }
-            String url = request["url"];
-            if (url.length() == 0) {
-                Serial.println("Command contains empty url");
-                return;
-            }
-            update(url, currentVersion);
-        });
+        update(url, currentVersion);
     }
 
 private:
@@ -47,6 +49,8 @@ private:
                 break;
         }
     }
+
+    const String currentVersion;
 };
 
 }}}    // namespace farmhub::client::commands
