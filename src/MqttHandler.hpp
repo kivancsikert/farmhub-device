@@ -68,8 +68,13 @@ public:
                     if (handler.command == command) {
                         // Clear command topic
                         mqttClient.publish(topic, "", true, 0);
-                        Responder responder(command, *this);
-                        handler.handle(json.as<JsonObject>(), responder);
+                        auto request = json.as<JsonObject>();
+                        DynamicJsonDocument responseDoc(2048);
+                        auto response = responseDoc.to<JsonObject>();
+                        handler.handle(request, response);
+                        if (response.size() > 0) {
+                            publish("responses/" + command, responseDoc);
+                        }
                         return;
                     }
                 }
@@ -117,23 +122,7 @@ public:
         return success;
     }
 
-    class Responder {
-    public:
-        Responder(const String& command, MqttHandler& mqtt)
-            : command(command)
-            , mqtt(mqtt) {
-        }
-
-        virtual void respond(std::function<void(JsonObject&)> populate) {
-            mqtt.publish("responses/" + command, populate);
-        }
-
-    private:
-        const String command;
-        MqttHandler& mqtt;
-    };
-
-    void registerCommand(const String command, std::function<void(const JsonObject&, Responder&)> handle) {
+    void registerCommand(const String command, std::function<void(const JsonObject&, JsonObject&)> handle) {
         commandHandlers.emplace_back(command, handle);
     }
 
@@ -228,13 +217,13 @@ private:
     bool connecting = false;
 
     struct CommandHandler {
-        CommandHandler(const String& command, std::function<void(const JsonObject&, Responder&)> handle)
+        CommandHandler(const String& command, std::function<void(const JsonObject&, JsonObject&)> handle)
             : command(command)
             , handle(handle) {
         }
 
         const String command;
-        const std::function<void(const JsonObject&, Responder&)> handle;
+        const std::function<void(const JsonObject&, JsonObject&)> handle;
     };
 
     std::list<CommandHandler> commandHandlers;

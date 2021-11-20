@@ -11,12 +11,12 @@ class HttpUpdateCommand {
 public:
     HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion) {
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-        mqtt.registerCommand("update", [currentVersion](const JsonObject& command, MqttHandler::Responder& responder) {
-            if (!command.containsKey("url")) {
+        mqtt.registerCommand("update", [currentVersion](const JsonObject& request, JsonObject& response) {
+            if (!request.containsKey("url")) {
                 Serial.println("Command contains no URL");
                 return;
             }
-            String url = command["url"];
+            String url = request["url"];
             if (url.length() == 0) {
                 Serial.println("Command contains empty url");
                 return;
