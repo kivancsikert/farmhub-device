@@ -62,15 +62,15 @@ protected:
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqtt(mdns, appConfig)
-        , echoCommand(mqtt)
-        , fileCommands(mqtt)
-        , httpUpdateCommand(mqtt, version)
-        , restartCommand(mqtt)
+        , mqttHandler(mdnsHandler, appConfig)
+        , echoCommand(mqttHandler)
+        , fileCommands(mqttHandler)
+        , httpUpdateCommand(mqttHandler, version)
+        , restartCommand(mqttHandler)
         , tasks(maxSleepTime) {
 
-        addTask(ota);
-        addTask(mqtt);
+        addTask(otaHandler);
+        addTask(mqttHandler);
     }
 
     void init(const String& hostname) {
@@ -92,11 +92,11 @@ protected:
 
         wifiProvider.begin();
         WiFi.setHostname(hostname.c_str());
-        mdns.begin(hostname, name, version);
-        ota.begin(hostname);
-        mqtt.begin();
+        mdnsHandler.begin(hostname, name, version);
+        otaHandler.begin(hostname);
+        mqttHandler.begin();
 
-        mqtt.publish("init", [&](JsonObject& json) {
+        mqttHandler.publish("init", [&](JsonObject& json) {
             json["type"] = deviceConfig.type.get();
             json["instance"] = deviceConfig.instance.get();
             json["model"] = deviceConfig.model.get();
@@ -114,6 +114,14 @@ protected:
         tasks.add(task);
     }
 
+    MdnsHandler& mdns() {
+        return mdnsHandler;
+    }
+
+    MqttHandler& mqtt() {
+        return mqttHandler;
+    }
+
     const String name;
     const String version;
 
@@ -121,18 +129,13 @@ private:
     DeviceConfiguration& deviceConfig;
     FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
-
-protected:
-    MdnsHandler mdns;
-    MqttHandler mqtt;
-
-private:
-    OtaHandler ota;
-
+    MdnsHandler mdnsHandler;
+    MqttHandler mqttHandler;
     commands::EchoCommand echoCommand;
     commands::FileCommands fileCommands;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
+    OtaHandler otaHandler;
 
     void beginFileSystem() {
         Serial.print("Starting file system... ");

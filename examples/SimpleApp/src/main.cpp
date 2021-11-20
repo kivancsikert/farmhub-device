@@ -54,7 +54,7 @@ class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider)
-        , telemetryPublisher(mqtt)
+        , telemetryPublisher(mqtt())
         , telemetryTask("Publish telemetry", seconds { 5 }, [&]() {
             telemetryPublisher.publish();
         }) {
