@@ -30,19 +30,19 @@ public:
     public:
         DeviceConfiguration(
             const String& defaultType,
+            const String& defaultModel,
             const String& defaultInstance = "default",
-            const String& defaultModel = "mk1",
             const String& path = "/device-config.json",
             size_t capacity = 2048)
             : FileConfiguration("device", path, capacity)
             , type(serializer, "type", defaultType)
-            , instance(serializer, "instance", defaultInstance)
-            , model(serializer, "model", "mk1") {
+            , model(serializer, "model", defaultModel)
+            , instance(serializer, "instance", defaultInstance) {
         }
 
         Property<String> type;
-        Property<String> instance;
         Property<String> model;
+        Property<String> instance;
 
         virtual bool isResetButtonPressed() {
             return false;
@@ -96,13 +96,15 @@ protected:
         otaHandler.begin(hostname);
         mqttHandler.begin();
 
-        mqttHandler.publish("init", [&](JsonObject& json) {
-            json["type"] = deviceConfig.type.get();
-            json["instance"] = deviceConfig.instance.get();
-            json["model"] = deviceConfig.model.get();
-            json["app"] = name;
-            json["version"] = version;
-        }, true);
+        mqttHandler.publish(
+            "init", [&](JsonObject& json) {
+                json["type"] = deviceConfig.type.get();
+                json["instance"] = deviceConfig.instance.get();
+                json["model"] = deviceConfig.model.get();
+                json["app"] = name;
+                json["version"] = version;
+            },
+            true);
 
         beginApp();
     }

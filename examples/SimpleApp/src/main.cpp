@@ -10,7 +10,7 @@ using namespace farmhub::client;
 class SimpleDeviceConfig : public Application::DeviceConfiguration {
 public:
     SimpleDeviceConfig()
-        : Application::DeviceConfiguration("simple device") {
+        : Application::DeviceConfiguration("simple-example", "mk1") {
     }
 };
 
