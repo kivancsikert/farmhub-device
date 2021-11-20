@@ -29,7 +29,7 @@ public:
     class DeviceConfiguration : public FileConfiguration {
     public:
         DeviceConfiguration(
-            const String& defaultType = "unspecified",
+            const String& defaultType,
             const String& defaultInstance = "default",
             const String& defaultModel = "mk1",
             const String& path = "/device-config.json",
