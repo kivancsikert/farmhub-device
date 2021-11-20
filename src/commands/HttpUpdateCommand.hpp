@@ -9,7 +9,7 @@ namespace farmhub { namespace client { namespace commands {
 
 class HttpUpdateCommand {
 public:
-    HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion = "UNKNOWN") {
+    HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion) {
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
         mqtt.registerCommand("update", [currentVersion](const JsonObject& command, MqttHandler::Responder& responder) {
             if (!command.containsKey("url")) {

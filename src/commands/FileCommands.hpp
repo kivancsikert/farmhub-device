@@ -9,8 +9,7 @@ namespace farmhub { namespace client { namespace commands {
 
 class FileCommands {
 public:
-    FileCommands(MqttHandler& mqtt)
-        : mqtt(mqtt) {
+    FileCommands(MqttHandler& mqtt) {
         mqtt.registerCommand("files/list", [&](const JsonObject& command, MqttHandler::Responder& responder) {
             responder.respond([](JsonObject& event) {
                 File root = SPIFFS.open("/", FILE_READ);
@@ -83,9 +82,6 @@ public:
             });
         });
     }
-
-private:
-    MqttHandler& mqtt;
 };
 
 }}}    // namespace farmhub::client::commands
