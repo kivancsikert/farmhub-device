@@ -7,6 +7,13 @@
 
 using namespace farmhub::client;
 
+class SimpleDeviceConfig : public Application::DeviceConfiguration {
+public:
+    SimpleDeviceConfig()
+        : Application::DeviceConfiguration("simple device") {
+    }
+};
+
 class SimpleAppConfig : public FileConfiguration {
 public:
     SimpleAppConfig()
@@ -46,7 +53,7 @@ protected:
 class SimpleApp : public Application {
 public:
     SimpleApp()
-        : Application("SimpleApp", "UNKNOWN", appConfig, wifiProvider)
+        : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider)
         , telemetryPublisher(mqtt)
         , telemetryTask("Publish telemetry", seconds { 5 }, [&]() {
             telemetryPublisher.publish();
@@ -61,6 +68,7 @@ protected:
     }
 
 private:
+    SimpleDeviceConfig deviceConfig;
     SimpleAppConfig appConfig;
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
