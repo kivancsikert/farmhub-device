@@ -11,7 +11,7 @@ class HttpUpdateCommand {
 public:
     HttpUpdateCommand(MqttHandler& mqtt, const String& currentVersion = "UNKNOWN") {
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-        mqtt.registerCommand("update", [currentVersion](const JsonObject& command) {
+        mqtt.registerCommand("update", [currentVersion](const JsonObject& command, MqttHandler::Responder& responder) {
             if (!command.containsKey("url")) {
                 Serial.println("Command contains no URL");
                 return;

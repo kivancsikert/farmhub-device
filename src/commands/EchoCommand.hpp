@@ -8,8 +8,8 @@ class EchoCommand {
 public:
     EchoCommand(MqttHandler& mqtt)
         : mqtt(mqtt) {
-        mqtt.registerCommand("echo", [&](const JsonObject& command) {
-            mqtt.publish("events/echo", [command](JsonObject& event) {
+        mqtt.registerCommand("echo", [](const JsonObject& command, MqttHandler::Responder& responder) {
+            responder.respond([command](JsonObject& event) {
                 event["original"] = command;
             });
         });

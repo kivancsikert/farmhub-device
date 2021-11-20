@@ -11,8 +11,8 @@ class FileCommands {
 public:
     FileCommands(MqttHandler& mqtt)
         : mqtt(mqtt) {
-        mqtt.registerCommand("files/list", [&](const JsonObject& command) {
-            mqtt.publish("events/files/list", [](JsonObject& event) {
+        mqtt.registerCommand("files/list", [&](const JsonObject& command, MqttHandler::Responder& responder) {
+            responder.respond([](JsonObject& event) {
                 File root = SPIFFS.open("/", FILE_READ);
                 JsonArray files = event.createNestedArray("files");
                 while (true) {
@@ -30,13 +30,13 @@ public:
                 }
             });
         });
-        mqtt.registerCommand("files/read", [&](const JsonObject& command) {
+        mqtt.registerCommand("files/read", [&](const JsonObject& command, MqttHandler::Responder& responder) {
             String path = command["path"];
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
             Serial.printf("Reading %s\n", path.c_str());
-            mqtt.publish("events/files/read", [path](JsonObject& event) {
+            responder.respond([path](JsonObject& event) {
                 event["path"] = path;
                 File file = SPIFFS.open(path, FILE_READ);
                 if (file) {
@@ -47,14 +47,14 @@ public:
                 }
             });
         });
-        mqtt.registerCommand("files/write", [&](const JsonObject& command) {
+        mqtt.registerCommand("files/write", [&](const JsonObject& command, MqttHandler::Responder& responder) {
             String path = command["path"];
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
             Serial.printf("Writing %s\n", path.c_str());
             String contents = command["contents"];
-            mqtt.publish("events/files/write", [path, contents](JsonObject& event) {
+            responder.respond([path, contents](JsonObject& event) {
                 event["path"] = path;
                 File file = SPIFFS.open(path, FILE_WRITE);
                 if (file) {
@@ -67,13 +67,13 @@ public:
                 }
             });
         });
-        mqtt.registerCommand("files/remove", [&](const JsonObject& command) {
+        mqtt.registerCommand("files/remove", [&](const JsonObject& command, MqttHandler::Responder& responder) {
             String path = command["path"];
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
             Serial.printf("Removing %s\n", path.c_str());
-            mqtt.publish("events/files/remove", [path](JsonObject& event) {
+            responder.respond([path](JsonObject& event) {
                 event["path"] = path;
                 if (SPIFFS.remove(path)) {
                     event["removed"] = true;
