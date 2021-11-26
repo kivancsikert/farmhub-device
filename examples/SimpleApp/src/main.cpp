@@ -40,9 +40,9 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<boot_clock> scheduledTime) override {
+    const Schedule loop(const Timing& timing) override {
         auto now = boot_clock::now();
-        microseconds drift = now - scheduledTime;
+        microseconds drift = now - timing.scheduledTime;
         Serial.printf("Simple app has been running for %ld seconds (drift %ld us)\n",
             (long) duration_cast<seconds>(now.time_since_epoch()).count(),
             (long) drift.count());
