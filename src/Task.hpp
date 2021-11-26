@@ -148,7 +148,7 @@ public:
     void loop() {
         auto loopStartTime = boot_clock::now();
 #ifdef LOG_TASKS
-        Serial.printf("Now @%ld\n", (long) loopStartTime.time_since_epoch().count());
+        Serial.printf("Loop starts at @%ld\n", (long) loopStartTime.time_since_epoch().count());
 #endif
 
         auto nextRound = previousRound + maxSleepTime;
