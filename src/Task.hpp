@@ -42,6 +42,27 @@ public:
         const microseconds delay;
     };
 
+    struct Timing {
+        Timing(time_point<boot_clock> scheduledTime, time_point<boot_clock> loopStartTime)
+            : scheduledTime(scheduledTime)
+            , loopStartTime(loopStartTime) {
+        }
+
+        /**
+         * @brief The time the task was scheduled to start.
+         *
+         * This might be earlier than the current time.
+         */
+        const time_point<boot_clock> scheduledTime;
+
+        /**
+         * @brief The time the current loop has started.
+         *
+         * This might be earlier than the current time.
+         */
+        const time_point<boot_clock> loopStartTime;
+    };
+
     const String name;
 
 protected:
@@ -51,11 +72,10 @@ protected:
      * Scheduling is best effort, which means that the task will not be called earlier than the
      * time returned by this function, but it may be called later.
      *
-     * @param scheduledTime the time the task was scheduled to execute. This might be earlier than
-     *     the current time.
-     * @return Schedule the schedule to keep based on <code>scheduledTime</code>.
+     * @param timing the timing information of the current loop.
+     * @return the schedule to keep based on <code>scheduledTime</code>.
      */
-    virtual const Schedule loop(time_point<boot_clock> scheduledTime) = 0;
+    virtual const Schedule loop(const Timing& timing) = 0;
     friend class TaskContainer;
 
     /**
@@ -105,7 +125,7 @@ public:
     }
 
 protected:
-    const Schedule loop(time_point<boot_clock> scheduledTime) override {
+    const Schedule loop(const Timing& timing) override {
         callback();
         return sleepFor(delay);
     }
@@ -126,9 +146,9 @@ public:
     }
 
     void loop() {
-        auto now = boot_clock::now();
+        auto loopStartTime = boot_clock::now();
 #ifdef LOG_TASKS
-        Serial.printf("Now @%ld\n", (long) now.time_since_epoch().count());
+        Serial.printf("Loop starts at @%ld\n", (long) loopStartTime.time_since_epoch().count());
 #endif
 
         auto nextRound = previousRound + maxSleepTime;
@@ -138,14 +158,14 @@ public:
                 entry.task.name.c_str(),
                 (long) entry.next.time_since_epoch().count());
 #endif
-            if (now >= entry.next) {
+            if (loopStartTime >= entry.next) {
 #ifdef LOG_TASKS
                 Serial.print(", running...");
 #endif
                 auto scheduledTime = entry.next == time_point<boot_clock>()
-                    ? now
+                    ? loopStartTime
                     : entry.next;
-                auto schedule = entry.task.loop(scheduledTime);
+                auto schedule = entry.task.loop(Task::Timing(scheduledTime, loopStartTime));
                 auto nextScheduledTime = scheduledTime + schedule.delay;
                 nextRound = std::min(nextRound, nextScheduledTime);
                 switch (schedule.type) {
