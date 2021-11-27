@@ -14,7 +14,7 @@ namespace farmhub { namespace client {
 
 class ConfigEntry {
 public:
-    ConfigEntry(const char* name)
+    ConfigEntry(const String& name)
         : name(name) {
     }
 
@@ -22,7 +22,7 @@ public:
     virtual void store(JsonObject& json, bool maskSecrets) const = 0;
 
 protected:
-    const char* name;
+    const String name;
 };
 
 class ConfigurationSerializer {
@@ -59,7 +59,7 @@ private:
 template <typename T>
 class Property : public ConfigEntry {
 public:
-    Property(ConfigurationSerializer& serializer, const char* name, const T& value, const bool secret = false)
+    Property(ConfigurationSerializer& serializer, const String& name, const T& value, const bool secret = false)
         : ConfigEntry(name)
         , secret(secret)
         , value(value) {
