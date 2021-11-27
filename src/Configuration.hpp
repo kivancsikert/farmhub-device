@@ -12,9 +12,9 @@ using std::reference_wrapper;
 
 namespace farmhub { namespace client {
 
-class BaseProperty {
+class ConfigEntry {
 public:
-    BaseProperty(const char* name)
+    ConfigEntry(const char* name)
         : name(name) {
     }
 
@@ -27,14 +27,14 @@ protected:
 
 class ConfigurationSerializer {
 public:
-    void add(BaseProperty& property) {
-        auto reference = std::ref(property);
-        properties.push_back(reference);
+    void add(ConfigEntry& entry) {
+        auto reference = std::ref(entry);
+        entries.push_back(reference);
     }
 
     void load(const JsonObject& json) const {
-        for (auto& property : properties) {
-            property.get().load(json);
+        for (auto& entry : entries) {
+            entry.get().load(json);
         }
     }
 
@@ -48,19 +48,19 @@ public:
 
 private:
     void storeInternal(JsonObject& json, bool maskSecrets) const {
-        for (auto& property : properties) {
-            property.get().store(json, maskSecrets);
+        for (auto& entry : entries) {
+            entry.get().store(json, maskSecrets);
         }
     }
 
-    list<reference_wrapper<BaseProperty>> properties;
+    list<reference_wrapper<ConfigEntry>> entries;
 };
 
 template <typename T>
-class Property : public BaseProperty {
+class Property : public ConfigEntry {
 public:
     Property(ConfigurationSerializer& serializer, const char* name, const T& value, const bool secret = false)
-        : BaseProperty(name)
+        : ConfigEntry(name)
         , secret(secret)
         , value(value) {
         serializer.add(*this);
