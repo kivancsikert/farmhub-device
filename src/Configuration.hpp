@@ -187,3 +187,19 @@ private:
 };
 
 }}    // namespace farmhub::client
+
+namespace std { namespace chrono {
+
+using namespace std::chrono;
+
+template <typename Duration>
+bool convertToJson(const Duration& src, JsonVariant dst) {
+    return dst.set(src.count());
+}
+
+template <typename Duration>
+void convertFromJson(JsonVariantConst src, Duration& dst) {
+    dst = Duration { src.as<uint64_t>() };
+}
+
+}}    // namespace std::chrono

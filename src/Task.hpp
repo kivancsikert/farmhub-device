@@ -120,18 +120,29 @@ class IntervalTask
 public:
     IntervalTask(const String& name, microseconds delay, std::function<void()> callback)
         : Task(name)
-        , delay(delay)
+        , delay([delay]() {
+            return delay;
+        })
+        , callback(callback) {
+    }
+
+    template <typename Duration = milliseconds>
+    IntervalTask(const String& name, const Property<Duration>& delay, std::function<void()> callback)
+        : Task(name)
+        , delay([delay]() {
+            return duration_cast<microseconds>(delay.get());
+        })
         , callback(callback) {
     }
 
 protected:
     const Schedule loop(const Timing& timing) override {
         callback();
-        return sleepFor(delay);
+        return sleepFor(delay());
     }
 
 private:
-    const microseconds delay;
+    const std::function<microseconds()> delay;
     const std::function<void()> callback;
 };
 
