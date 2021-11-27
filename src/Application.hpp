@@ -18,8 +18,8 @@ namespace farmhub { namespace client {
 
 class Application {
 public:
-    void begin(const String& hostname) {
-        init(hostname);
+    void begin() {
+        init();
     }
 
     void loop() {
@@ -58,6 +58,10 @@ public:
         virtual bool isResetButtonPressed() {
             return false;
         }
+
+        virtual const String getHostname() {
+            return type.get() + "-" + instance.get();
+        }
     };
 
 protected:
@@ -89,15 +93,38 @@ protected:
         addTask(mqttHandler);
     }
 
-    void init(const String& hostname) {
+    virtual void beginApp() {
+    }
+
+    void addTask(Task& task) {
+        tasks.add(task);
+    }
+
+    MdnsHandler& mdns() {
+        return mdnsHandler;
+    }
+
+    MqttHandler& mqtt() {
+        return mqttHandler;
+    }
+
+    const String name;
+    const String version;
+
+private:
+    void init() {
         Serial.begin(115200);
-        Serial.printf("\nStarting %s version %s with hostname %s\n",
-            name.c_str(), version.c_str(), hostname.c_str());
+        Serial.printf("\nStarting %s version %s\n",
+            name.c_str(), version.c_str());
 
         beginFileSystem();
         deviceConfig.begin();
-        Serial.printf("Running on %s %s instance '%s'\n",
-            deviceConfig.type.get().c_str(), deviceConfig.model.get().c_str(), deviceConfig.instance.get().c_str());
+
+        const String& hostname = deviceConfig.getHostname();
+
+        Serial.printf("Running on %s %s instance '%s' with hostname '%s'\n",
+            deviceConfig.type.get().c_str(), deviceConfig.model.get().c_str(),
+            deviceConfig.instance.get().c_str(), hostname.c_str());
 
         if (deviceConfig.isResetButtonPressed()) {
             Serial.println("Reset button pressed, skipping application configuration");
@@ -133,39 +160,6 @@ protected:
         beginApp();
     }
 
-    virtual void beginApp() {
-    }
-
-    void addTask(Task& task) {
-        tasks.add(task);
-    }
-
-    MdnsHandler& mdns() {
-        return mdnsHandler;
-    }
-
-    MqttHandler& mqtt() {
-        return mqttHandler;
-    }
-
-    const String name;
-    const String version;
-
-private:
-    DeviceConfiguration& deviceConfig;
-    FileConfiguration& appConfig;
-    WiFiProvider& wifiProvider;
-    MdnsHandler mdnsHandler;
-    MqttHandler mqttHandler;
-    commands::EchoCommand echoCommand;
-    commands::FileListCommand fileListCommand;
-    commands::FileReadCommand fileReadCommand;
-    commands::FileWriteCommand fileWriteCommand;
-    commands::FileRemoveCommand fileRemoveCommand;
-    commands::HttpUpdateCommand httpUpdateCommand;
-    commands::RestartCommand restartCommand;
-    OtaHandler otaHandler;
-
     void beginFileSystem() {
         Serial.print("Starting file system... ");
         if (!SPIFFS.begin()) {
@@ -185,6 +179,19 @@ private:
         }
     }
 
+    DeviceConfiguration& deviceConfig;
+    FileConfiguration& appConfig;
+    WiFiProvider& wifiProvider;
+    MdnsHandler mdnsHandler;
+    MqttHandler mqttHandler;
+    commands::EchoCommand echoCommand;
+    commands::FileListCommand fileListCommand;
+    commands::FileReadCommand fileReadCommand;
+    commands::FileWriteCommand fileWriteCommand;
+    commands::FileRemoveCommand fileRemoveCommand;
+    commands::HttpUpdateCommand httpUpdateCommand;
+    commands::RestartCommand restartCommand;
+    OtaHandler otaHandler;
     TaskContainer tasks;
 };
 

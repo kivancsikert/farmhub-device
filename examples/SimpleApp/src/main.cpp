@@ -88,7 +88,7 @@ private:
 SimpleApp app;
 
 void setup() {
-    app.begin("simple-app");
+    app.begin();
 }
 
 void loop() {
