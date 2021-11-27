@@ -61,7 +61,7 @@ class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider) {
-        addTask(telemetryTask);
+        addTask(telemetryPublisher);
         addTask(uptimeTask);
     }
 
@@ -75,11 +75,7 @@ private:
     SimpleAppConfig appConfig;
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher { mqtt() };
-    IntervalTask telemetryTask { "Telemetry", appConfig.publishInterval,
-        [&]() {
-            telemetryPublisher.publish();
-        } };
+    TelemetryPublisher telemetryPublisher { appConfig.publishInterval, mqtt() };
     SimpleUptimeTask uptimeTask { appConfig.uptimeInterval };
 
     int iterations = 0;
