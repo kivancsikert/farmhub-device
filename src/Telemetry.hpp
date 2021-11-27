@@ -14,12 +14,25 @@ protected:
     friend class TelemetryPublisher;
 };
 
-class TelemetryPublisher {
+class TelemetryPublisher
+    : public IntervalTask {
 public:
     TelemetryPublisher(
+        milliseconds interval,
         MqttHandler& mqtt,
         const String& topic = "telemetry")
-        : mqtt(mqtt)
+        : IntervalTask("Publish telemetry", interval, [&]() { publish(); })
+        , mqtt(mqtt)
+        , topic(topic) {
+    }
+
+    template <typename Duration>
+    TelemetryPublisher(
+        Property<Duration>& interval,
+        MqttHandler& mqtt,
+        const String& topic = "telemetry")
+        : IntervalTask("Publish telemetry", interval, [&]() { publish(); })
+        , mqtt(mqtt)
         , topic(topic) {
     }
 
@@ -33,6 +46,7 @@ public:
         }
     }
 
+private:
     void publish() {
         DynamicJsonDocument doc(2048);
         JsonObject root = doc.to<JsonObject>();
@@ -41,7 +55,6 @@ public:
         mqtt.publish(topic, doc);
     }
 
-private:
     MqttHandler& mqtt;
     const String topic;
     std::list<std::reference_wrapper<TelemetryProvider>> providers;
