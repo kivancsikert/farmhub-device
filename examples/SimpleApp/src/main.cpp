@@ -19,6 +19,9 @@ public:
     SimpleAppConfig()
         : FileConfiguration("application", "/config.json") {
     }
+
+    Property<seconds> publishInterval { serializer, "publishInterval", seconds(5) };
+    Property<seconds> uptimeInterval { serializer, "uptimeInterval", seconds(10) };
 };
 
 class SimpleTelemetryProvider
@@ -35,8 +38,9 @@ private:
 class SimpleUptimeTask
     : public Task {
 public:
-    SimpleUptimeTask()
-        : Task("Uptime printer") {
+    SimpleUptimeTask(Property<seconds>& interval)
+        : Task("Uptime printer")
+        , interval(interval) {
     }
 
 protected:
@@ -46,18 +50,17 @@ protected:
         Serial.printf("Simple app has been running for %ld seconds (drift %ld us)\n",
             (long) duration_cast<seconds>(now.time_since_epoch()).count(),
             (long) drift.count());
-        return sleepFor(seconds { 10 });
+        return sleepFor(interval.get());
     }
+
+private:
+    Property<seconds>& interval;
 };
 
 class SimpleApp : public Application {
 public:
     SimpleApp()
-        : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider)
-        , telemetryPublisher(mqtt())
-        , telemetryTask("Publish telemetry", seconds { 5 }, [&]() {
-            telemetryPublisher.publish();
-        }) {
+        : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider) {
         addTask(telemetryTask);
         addTask(uptimeTask);
     }
@@ -72,9 +75,12 @@ private:
     SimpleAppConfig appConfig;
     WiFiManagerProvider wifiProvider;
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher;
-    IntervalTask telemetryTask;
-    SimpleUptimeTask uptimeTask;
+    TelemetryPublisher telemetryPublisher { mqtt() };
+    IntervalTask telemetryTask { "Telemetry", appConfig.publishInterval,
+        [&]() {
+            telemetryPublisher.publish();
+        } };
+    SimpleUptimeTask uptimeTask { appConfig.uptimeInterval };
 
     int iterations = 0;
 };
