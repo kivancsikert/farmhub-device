@@ -35,25 +35,17 @@ public:
             const String& path = "/device-config.json",
             size_t capacity = 2048)
             : FileConfiguration("device", path, capacity)
-            , type(serializer, "type", defaultType)
-            , model(serializer, "model", defaultModel)
-            , instance(serializer, "instance", defaultInstance)
-            , description(serializer, "description", "")
-            , mqttHost(serializer, "mqttHost", "")
-            , mqttPort(serializer, "mqttPort", 1883)
-            , mqttClientId(serializer, "mqttClientId", "")
-            , mqttTopic(serializer, "mqttTopic", "") {
+            , type(this, "type", defaultType)
+            , model(this, "model", defaultModel)
+            , instance(this, "instance", defaultInstance) {
         }
 
         Property<String> type;
         Property<String> model;
         Property<String> instance;
-        Property<String> description;
+        Property<String> description { this, "description", "" };
 
-        Property<String> mqttHost;
-        Property<unsigned int> mqttPort;
-        Property<String> mqttClientId;
-        Property<String> mqttTopic;
+        MqttHandler::Config mqtt { this, "mqtt" };
 
         virtual bool isResetButtonPressed() {
             return false;
@@ -77,7 +69,7 @@ protected:
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(mdnsHandler, appConfig)
+        , mqttHandler(mdnsHandler, deviceConfig.mqtt, appConfig)
         , httpUpdateCommand(version)
         , tasks(maxSleepTime) {
 
@@ -119,6 +111,12 @@ private:
 
         beginFileSystem();
         deviceConfig.begin();
+        if (deviceConfig.mqtt.clientId.get().isEmpty()) {
+            deviceConfig.mqtt.clientId.set(deviceConfig.type.get() + "-" + deviceConfig.instance.get());
+        }
+        if (deviceConfig.mqtt.topic.get().isEmpty()) {
+            deviceConfig.mqtt.topic.set("devices/" + deviceConfig.type.get() + "/" + deviceConfig.instance.get());
+        }
 
         const String& hostname = deviceConfig.getHostname();
 
@@ -137,16 +135,7 @@ private:
         WiFi.setHostname(hostname.c_str());
         mdnsHandler.begin(hostname, name, version);
         otaHandler.begin(hostname);
-        mqttHandler.begin(
-            deviceConfig.mqttHost.get(),
-            deviceConfig.mqttPort.get(),
-            deviceConfig.mqttClientId.get().isEmpty()
-                ? deviceConfig.type.get() + "-" + deviceConfig.instance.get()
-                : deviceConfig.mqttClientId.get(),
-            deviceConfig.mqttTopic.get().isEmpty()
-                ? "devices/" + deviceConfig.type.get() + "/" + deviceConfig.instance.get()
-                : deviceConfig.mqttTopic.get());
-
+        mqttHandler.begin();
         mqttHandler.publish(
             "init", [&](JsonObject& json) {
                 json["type"] = deviceConfig.type.get();

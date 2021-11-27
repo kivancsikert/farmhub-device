@@ -33,10 +33,12 @@ Basic configuration is provided in `BaseDeviceConfig` that can be extended by th
     "model": "mk1", // hardware variant
     "instance": "default", // the instance name
     "description": "Chicken door", // human-readable description
-    "mqttHost": "...", // broker host name, look up via mDNS if omitted
-    "mqttPort": 1883, // broker port, defaults to 1883
-    "mqttClientId": "chicken-door", // client ID, defaults to "$type-$instance" if omitted
-    "mqttTopic": "devices/chicken-door" // topic prefix, defaults to "devices/$type/$instance" if omitted
+    "mqtt": {
+        "host": "...", // broker host name, look up via mDNS if omitted
+        "port": 1883, // broker port, defaults to 1883
+        "clientId": "chicken-door", // client ID, defaults to "$type-$instance" if omitted
+        "topic": "devices/chicken-door" // topic prefix, defaults to "devices/$type/$instance" if omitted
+    }
 }
 ```
 

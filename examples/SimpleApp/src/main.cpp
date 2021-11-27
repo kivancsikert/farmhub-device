@@ -20,8 +20,8 @@ public:
         : FileConfiguration("application", "/config.json") {
     }
 
-    Property<seconds> publishInterval { serializer, "publishInterval", seconds(5) };
-    Property<seconds> uptimeInterval { serializer, "uptimeInterval", seconds(10) };
+    Property<seconds> publishInterval { this, "publishInterval", seconds(5) };
+    Property<seconds> uptimeInterval { this, "uptimeInterval", seconds(10) };
 };
 
 class SimpleTelemetryProvider

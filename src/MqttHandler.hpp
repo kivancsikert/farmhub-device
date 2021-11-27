@@ -25,21 +25,31 @@ namespace farmhub { namespace client {
 class MqttHandler
     : public Task {
 public:
-    MqttHandler(MdnsHandler& mdns, Configuration& appConfig)
+    class Config : public NamedConfigurationSection {
+    public:
+        Config(ConfigurationSection* parent, const String& name)
+            : NamedConfigurationSection(parent, name) {
+        }
+
+        Property<String> host { this, "host", "" };
+        Property<unsigned int> port { this, "port", 1883 };
+        Property<String> clientId { this, "clientId", "" };
+        Property<String> topic { this, "topic", "" };
+    };
+
+    MqttHandler(MdnsHandler& mdns, const Config& mqttConfig, Configuration& appConfig)
         : Task("MQTT")
-        , mdns(mdns)
         , mqttClient(MQTT_BUFFER_SIZE)
+        , mdns(mdns)
+        , mqttConfig(mqttConfig)
         , appConfig(appConfig) {
     }
 
-    void begin(String hostname, unsigned int port, String clientId, String topic) {
+    void begin() {
+        const String& clientId = mqttConfig.clientId.get();
+        const String& topic = mqttConfig.topic.get();
         Serial.printf("MQTT client ID is '%s', topic prefix is '%s'\n",
             clientId.c_str(), topic.c_str());
-
-        this->hostname = hostname;
-        this->port = port;
-        this->clientId = clientId;
-        this->topic = topic;
 
         String appConfigTopic = topic + "/config";
         String commandTopicPrefix = topic + "/commands/";
@@ -87,7 +97,7 @@ public:
     }
 
     bool publish(const String& suffix, const JsonDocument& json, bool retain = false, int qos = 0) {
-        String fullTopic = topic + "/" + suffix;
+        String fullTopic = mqttConfig.topic.get() + "/" + suffix;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
             fullTopic.c_str(), (retain ? " (retain)" : ""), qos);
@@ -112,7 +122,7 @@ public:
         if (!mqttClient.connected()) {
             return false;
         }
-        String fullTopic = topic + "/" + suffix;
+        String fullTopic = mqttConfig.topic.get() + "/" + suffix;
         Serial.printf("Subscribing to MQTT topic '%s' with QOS = %d\n", fullTopic.c_str(), qos);
         bool success = mqttClient.subscribe(fullTopic.c_str(), qos);
         if (!success) {
@@ -172,6 +182,7 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
+        const String& hostname = mqttConfig.host.get();
         if (hostname.isEmpty()) {
             bool found = mdns.withService(
                 "mqtt", "tcp",
@@ -186,6 +197,7 @@ private:
             }
         } else {
             bool found = mdns.withHost(hostname, [&](const IPAddress& address) {
+                unsigned int port = mqttConfig.port.get();
                 Serial.print("Connecting to MQTT broker at " + address.toString() + ":" + String(port));
                 mqttClient.setHost(address, port);
             });
@@ -195,7 +207,7 @@ private:
         }
         Serial.print("...");
 
-        bool result = mqttClient.connect(clientId.c_str());
+        bool result = mqttClient.connect(mqttConfig.clientId.get().c_str());
 
         if (!result) {
             Serial.printf(" failed, error = %d (check lwmqtt_err_t), return code = %d (check lwmqtt_return_code_t)\n",
@@ -216,13 +228,11 @@ private:
         return true;
     }
 
-    MdnsHandler mdns;
     WiFiClient client;
     MQTTClient mqttClient;
-    String hostname;
-    unsigned int port;
-    String clientId;
-    String topic;
+
+    MdnsHandler& mdns;
+    const Config& mqttConfig;
     Configuration& appConfig;
 
     bool connecting = false;
