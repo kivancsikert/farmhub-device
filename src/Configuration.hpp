@@ -185,24 +185,17 @@ public:
 
     void update(const JsonObject& json) override {
         Configuration::update(json);
-        store();
-    }
-
-private:
-    void store() const {
         File file = SPIFFS.open(path, FILE_WRITE);
         if (!file) {
             fatalError("Cannot open config file " + path);
             return;
         }
 
-        DynamicJsonDocument json(capacity);
-        auto root = json.to<JsonObject>();
-        ConfigurationSection::store(root, false);
         serializeJson(json, file);
         file.close();
     }
 
+private:
     const String path;
 };
 
