@@ -42,14 +42,14 @@ Basic configuration is provided in `BaseDeviceConfig` that can be extended by th
 }
 ```
 
-### Zeroconf
+### MQTT zeroconf
 
-If the `mqttHost` parameter is omitted or left empty, we'll try to look up the first MQTT server via mDNS.
+If the `mqtt.host` parameter is omitted or left empty, we'll try to look up the first MQTT server via mDNS.
 If we find a hit, we'll also use the port specified in mDNS.
 If there are multiple hits, the first one is used.
 
-If `mqttClientId` is omitted, we make up an ID from the device type and instance name.
-If `mqttTopic` is omitted, we also invent one using device type and instance name.
+If `mqtt.clientId` is omitted, we make up an ID from the device type and instance name.
+If `mqtt.topic` is omitted, we also invent one using device type and instance name.
 
 ## Application configuration
 
