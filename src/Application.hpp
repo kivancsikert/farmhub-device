@@ -23,7 +23,7 @@ public:
     }
 
     void loop() {
-        tasks.loop();
+        taskContainer.loop();
     }
 
     class DeviceConfiguration : public FileConfiguration {
@@ -66,11 +66,11 @@ protected:
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
-        , tasks(maxSleepTime)
+        , taskContainer(maxSleepTime)
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(tasks, mdnsHandler, deviceConfig.mqtt, appConfig)
+        , mqttHandler(tasks(), mdnsHandler, deviceConfig.mqtt, appConfig)
         , httpUpdateCommand(version) {
 
         mqttHandler.registerCommand("echo", echoCommand);
@@ -93,10 +93,12 @@ protected:
         return mqttHandler;
     }
 
+    TaskContainer& tasks() {
+        return taskContainer;
+    }
+
     const String name;
     const String version;
-
-    TaskContainer tasks;
 
 private:
     void init() {
@@ -165,6 +167,7 @@ private:
         }
     }
 
+    TaskContainer taskContainer;
     DeviceConfiguration& deviceConfig;
     FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
@@ -177,7 +180,7 @@ private:
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-    OtaHandler otaHandler { tasks };
+    OtaHandler otaHandler { tasks() };
 };
 
 }}    // namespace farmhub::client
