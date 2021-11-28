@@ -23,7 +23,7 @@ using namespace std::chrono;
 namespace farmhub { namespace client {
 
 class MqttHandler
-    : public Task {
+    : public BaseTask {
 public:
     class Config : public NamedConfigurationSection {
     public:
@@ -37,8 +37,8 @@ public:
         Property<String> topic { this, "topic", "" };
     };
 
-    MqttHandler(MdnsHandler& mdns, const Config& mqttConfig, Configuration& appConfig)
-        : Task("MQTT")
+    MqttHandler(TaskContainer& tasks, MdnsHandler& mdns, const Config& mqttConfig, Configuration& appConfig)
+        : BaseTask(tasks, "MQTT")
         , mqttClient(MQTT_BUFFER_SIZE)
         , mdns(mdns)
         , mqttConfig(mqttConfig)

@@ -23,7 +23,7 @@ public:
     }
 
     void loop() {
-        tasks.loop();
+        taskContainer.loop();
     }
 
     class DeviceConfiguration : public FileConfiguration {
@@ -66,12 +66,12 @@ protected:
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
+        , taskContainer(maxSleepTime)
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(mdnsHandler, deviceConfig.mqtt, appConfig)
-        , httpUpdateCommand(version)
-        , tasks(maxSleepTime) {
+        , mqttHandler(tasks(), mdnsHandler, deviceConfig.mqtt, appConfig)
+        , httpUpdateCommand(version) {
 
         mqttHandler.registerCommand("echo", echoCommand);
         mqttHandler.registerCommand("restart", restartCommand);
@@ -80,16 +80,9 @@ protected:
         mqttHandler.registerCommand("files/write", fileWriteCommand);
         mqttHandler.registerCommand("files/remove", fileRemoveCommand);
         mqttHandler.registerCommand("update", httpUpdateCommand);
-
-        addTask(otaHandler);
-        addTask(mqttHandler);
     }
 
     virtual void beginApp() {
-    }
-
-    void addTask(Task& task) {
-        tasks.add(task);
     }
 
     MdnsHandler& mdns() {
@@ -98,6 +91,10 @@ protected:
 
     MqttHandler& mqtt() {
         return mqttHandler;
+    }
+
+    TaskContainer& tasks() {
+        return taskContainer;
     }
 
     const String name;
@@ -131,8 +128,10 @@ private:
             appConfig.begin();
         }
 
-        wifiProvider.begin();
-        WiFi.setHostname(hostname.c_str());
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.println("WiFi connected, IP address: " + WiFi.localIP().toString() + ", hostname: " + WiFi.getHostname());
+        }, SYSTEM_EVENT_STA_GOT_IP);
+        wifiProvider.begin(hostname);
         mdnsHandler.begin(hostname, name, version);
         otaHandler.begin(hostname);
         mqttHandler.begin();
@@ -168,6 +167,7 @@ private:
         }
     }
 
+    TaskContainer taskContainer;
     DeviceConfiguration& deviceConfig;
     FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
@@ -180,8 +180,7 @@ private:
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-    OtaHandler otaHandler;
-    TaskContainer tasks;
+    OtaHandler otaHandler { tasks() };
 };
 
 }}    // namespace farmhub::client

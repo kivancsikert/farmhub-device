@@ -8,11 +8,11 @@
 namespace farmhub { namespace client {
 
 class OtaHandler
-    : public Task {
+    : public BaseTask {
 
 public:
-    OtaHandler()
-        : Task("OTA") {
+    OtaHandler(TaskContainer& tasks)
+        : BaseTask(tasks, "OTA") {
     }
 
     void begin(const String& hostname) {

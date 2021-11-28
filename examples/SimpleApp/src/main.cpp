@@ -36,10 +36,10 @@ private:
 };
 
 class SimpleUptimeTask
-    : public Task {
+    : public BaseTask {
 public:
-    SimpleUptimeTask(Property<seconds>& interval)
-        : Task("Uptime printer")
+    SimpleUptimeTask(TaskContainer& tasks, Property<seconds>& interval)
+        : BaseTask(tasks, "Uptime printer")
         , interval(interval) {
     }
 
@@ -61,8 +61,6 @@ class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider) {
-        addTask(telemetryPublisher);
-        addTask(uptimeTask);
     }
 
 protected:
@@ -73,10 +71,10 @@ protected:
 private:
     SimpleDeviceConfig deviceConfig;
     SimpleAppConfig appConfig;
-    WiFiManagerProvider wifiProvider;
+    NonBlockingWiFiManagerProvider wifiProvider { tasks() };
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher { appConfig.publishInterval, mqtt() };
-    SimpleUptimeTask uptimeTask { appConfig.uptimeInterval };
+    TelemetryPublisher telemetryPublisher { tasks(), appConfig.publishInterval, mqtt() };
+    SimpleUptimeTask uptimeTask { tasks(), appConfig.uptimeInterval };
 
     int iterations = 0;
 };
