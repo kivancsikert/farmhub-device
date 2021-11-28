@@ -16,7 +16,7 @@ class ConfigurationEntry {
 public:
     virtual void load(const JsonObject& json) = 0;
     virtual void reset() = 0;
-    virtual void store(JsonObject& json, bool maskSecrets) const = 0;
+    virtual void store(JsonObject& json) const = 0;
 };
 
 class ConfigurationSection : public ConfigurationEntry {
@@ -38,9 +38,9 @@ public:
         }
     }
 
-    virtual void store(JsonObject& json, bool maskSecrets) const override {
+    virtual void store(JsonObject& json) const override {
         for (auto& entry : entries) {
-            entry.get().store(json, maskSecrets);
+            entry.get().store(json);
         }
     }
 
@@ -63,9 +63,9 @@ public:
         }
     }
 
-    void store(JsonObject& json, bool maskSecrets) const override {
+    void store(JsonObject& json) const override {
         auto section = json.createNestedObject(name);
-        ConfigurationSection::store(section, maskSecrets);
+        ConfigurationSection::store(section);
     }
 
 private:
@@ -101,8 +101,8 @@ public:
         value = defaultValue;
     }
 
-    void store(JsonObject& json, bool maskSecrets) const override {
-        if (maskSecrets && secret) {
+    void store(JsonObject& json) const override {
+        if (secret) {
             json[name] = "********";
         } else {
             json[name] = value;
@@ -138,7 +138,7 @@ protected:
         // Print effective configuration
         DynamicJsonDocument prettyJson(2048);
         auto prettyRoot = prettyJson.to<JsonObject>();
-        ConfigurationSection::store(prettyRoot, true);
+        ConfigurationSection::store(prettyRoot);
         Serial.println("Effective " + name + " configuration:");
         serializeJsonPretty(prettyJson, Serial);
         Serial.println();
