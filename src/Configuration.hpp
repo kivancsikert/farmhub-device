@@ -12,61 +12,78 @@ using std::reference_wrapper;
 
 namespace farmhub { namespace client {
 
-class BaseProperty {
+class ConfigurationEntry {
 public:
-    BaseProperty(const char* name)
-        : name(name) {
-    }
-
     virtual void load(const JsonObject& json) = 0;
+    virtual void reset() = 0;
     virtual void store(JsonObject& json, bool maskSecrets) const = 0;
-
-protected:
-    const char* name;
 };
 
-class ConfigurationSerializer {
+class ConfigurationSection : public ConfigurationEntry {
 public:
-    void add(BaseProperty& property) {
-        auto reference = std::ref(property);
-        properties.push_back(reference);
+    void add(ConfigurationEntry& entry) {
+        auto reference = std::ref(entry);
+        entries.push_back(reference);
     }
 
-    void load(const JsonObject& json) const {
-        for (auto& property : properties) {
-            property.get().load(json);
+    virtual void load(const JsonObject& json) override {
+        for (auto& entry : entries) {
+            entry.get().load(json);
         }
     }
 
-    void store(JsonObject& json) const {
-        storeInternal(json, false);
+    virtual void reset() override {
+        for (auto& entry : entries) {
+            entry.get().reset();
+        }
     }
 
-    void storeMaskingSecrets(JsonObject& json) const {
-        storeInternal(json, true);
+    virtual void store(JsonObject& json, bool maskSecrets) const override {
+        for (auto& entry : entries) {
+            entry.get().store(json, maskSecrets);
+        }
     }
 
 private:
-    void storeInternal(JsonObject& json, bool maskSecrets) const {
-        for (auto& property : properties) {
-            property.get().store(json, maskSecrets);
+    list<reference_wrapper<ConfigurationEntry>> entries;
+};
+
+class NamedConfigurationSection : public ConfigurationSection {
+public:
+    NamedConfigurationSection(ConfigurationSection* parent, const String& name)
+        : name(name) {
+        parent->add(*this);
+    }
+
+    void load(const JsonObject& json) override {
+        if (json.containsKey(name)) {
+            ConfigurationSection::load(json[name]);
+        } else {
+            reset();
         }
     }
 
-    list<reference_wrapper<BaseProperty>> properties;
+    void store(JsonObject& json, bool maskSecrets) const override {
+        auto section = json.createNestedObject(name);
+        ConfigurationSection::store(section, maskSecrets);
+    }
+
+private:
+    const String name;
 };
 
 template <typename T>
-class Property : public BaseProperty {
+class Property : public ConfigurationEntry {
 public:
-    Property(ConfigurationSerializer& serializer, const char* name, const T& value, const bool secret = false)
-        : BaseProperty(name)
+    Property(ConfigurationSection* parent, const String& name, const T& value, const bool secret = false)
+        : name(name)
         , secret(secret)
-        , value(value) {
-        serializer.add(*this);
+        , value(value)
+        , defaultValue(value) {
+        parent->add(*this);
     }
 
-    void set(const T& value) const {
+    void set(const T& value) {
         this->value = value;
     }
 
@@ -80,6 +97,10 @@ public:
         }
     }
 
+    void reset() override {
+        value = defaultValue;
+    }
+
     void store(JsonObject& json, bool maskSecrets) const override {
         if (maskSecrets && secret) {
             json[name] = "********";
@@ -89,20 +110,21 @@ public:
     }
 
 private:
+    const String name;
     const bool secret;
     T value;
+    const T defaultValue;
 };
 
-class Configuration {
+class Configuration : protected ConfigurationSection {
 public:
     Configuration(const String& name, size_t capacity = 2048)
         : name(name)
         , capacity(capacity) {
     }
 
-    void reset() {
-        DynamicJsonDocument json(capacity);
-        load(json.to<JsonObject>());
+    void reset() override {
+        ConfigurationSection::reset();
     }
 
     virtual void update(const JsonObject& json) {
@@ -110,23 +132,21 @@ public:
     }
 
 protected:
-    ConfigurationSerializer serializer;
-
-    void load(const JsonObject& json) {
-        serializer.load(json);
+    void load(const JsonObject& json) override {
+        ConfigurationSection::load(json);
 
         // Print effective configuration
         DynamicJsonDocument prettyJson(2048);
         auto prettyRoot = prettyJson.to<JsonObject>();
-        serializer.storeMaskingSecrets(prettyRoot);
+        ConfigurationSection::store(prettyRoot, true);
         Serial.println("Effective " + name + " configuration:");
         serializeJsonPretty(prettyJson, Serial);
         Serial.println();
 
-        onLoad(json);
+        onUpdate();
     }
 
-    virtual void onLoad(const JsonObject& json) {
+    virtual void onUpdate() {
         // Override if needed
     }
 
@@ -178,7 +198,7 @@ private:
 
         DynamicJsonDocument json(capacity);
         auto root = json.to<JsonObject>();
-        serializer.store(root);
+        ConfigurationSection::store(root, false);
         serializeJson(json, file);
         file.close();
     }
