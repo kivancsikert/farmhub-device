@@ -70,7 +70,7 @@ protected:
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(mdnsHandler, deviceConfig.mqtt, appConfig)
+        , mqttHandler(tasks, mdnsHandler, deviceConfig.mqtt, appConfig)
         , httpUpdateCommand(version) {
 
         mqttHandler.registerCommand("echo", echoCommand);
@@ -80,16 +80,9 @@ protected:
         mqttHandler.registerCommand("files/write", fileWriteCommand);
         mqttHandler.registerCommand("files/remove", fileRemoveCommand);
         mqttHandler.registerCommand("update", httpUpdateCommand);
-
-        addTask(otaHandler);
-        addTask(mqttHandler);
     }
 
     virtual void beginApp() {
-    }
-
-    void addTask(Task& task) {
-        tasks.add(task);
     }
 
     MdnsHandler& mdns() {
@@ -182,7 +175,7 @@ private:
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-    OtaHandler otaHandler;
+    OtaHandler otaHandler { tasks };
 };
 
 }}    // namespace farmhub::client

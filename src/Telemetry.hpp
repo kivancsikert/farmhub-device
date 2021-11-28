@@ -18,20 +18,22 @@ class TelemetryPublisher
     : public IntervalTask {
 public:
     TelemetryPublisher(
+        TaskContainer& tasks,
         milliseconds interval,
         MqttHandler& mqtt,
         const String& topic = "telemetry")
-        : IntervalTask("Publish telemetry", interval, [&]() { publish(); })
+        : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
         , topic(topic) {
     }
 
     template <typename Duration>
     TelemetryPublisher(
+        TaskContainer& tasks,
         Property<Duration>& interval,
         MqttHandler& mqtt,
         const String& topic = "telemetry")
-        : IntervalTask("Publish telemetry", interval, [&]() { publish(); })
+        : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
         , topic(topic) {
     }

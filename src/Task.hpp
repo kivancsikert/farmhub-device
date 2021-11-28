@@ -115,45 +115,14 @@ protected:
     }
 };
 
-class IntervalTask
-    : public Task {
-public:
-    IntervalTask(const String& name, microseconds delay, std::function<void()> callback)
-        : Task(name)
-        , delay([delay]() {
-            return delay;
-        })
-        , callback(callback) {
-    }
-
-    template <typename Duration = milliseconds>
-    IntervalTask(const String& name, const Property<Duration>& delay, std::function<void()> callback)
-        : Task(name)
-        , delay([delay]() {
-            return duration_cast<microseconds>(delay.get());
-        })
-        , callback(callback) {
-    }
-
-protected:
-    const Schedule loop(const Timing& timing) override {
-        callback();
-        return sleepFor(delay());
-    }
-
-private:
-    const std::function<microseconds()> delay;
-    const std::function<void()> callback;
-};
-
 class TaskContainer {
 public:
     TaskContainer(microseconds maxSleepTime)
         : maxSleepTime(maxSleepTime) {
     }
 
-    void add(Task& task) {
-        tasks.emplace_back(task);
+    void schedule(Task* task) {
+        tasks.emplace_back(*task);
     }
 
     void loop() {
@@ -233,6 +202,45 @@ private:
     const microseconds maxSleepTime;
     std::list<TaskEntry> tasks;
     time_point<boot_clock> previousRound;
+};
+
+class BaseTask : public Task {
+public:
+    BaseTask(TaskContainer& tasks, const String& name)
+        : Task(name) {
+        tasks.schedule(this);
+    }
+};
+
+class IntervalTask
+    : public BaseTask {
+public:
+    IntervalTask(TaskContainer& tasks, const String& name, microseconds delay, std::function<void()> callback)
+        : BaseTask(tasks, name)
+        , delay([delay]() {
+            return delay;
+        })
+        , callback(callback) {
+    }
+
+    template <typename Duration = milliseconds>
+    IntervalTask(TaskContainer& tasks, const String& name, const Property<Duration>& delay, std::function<void()> callback)
+        : BaseTask(tasks, name)
+        , delay([delay]() {
+            return duration_cast<microseconds>(delay.get());
+        })
+        , callback(callback) {
+    }
+
+protected:
+    const Schedule loop(const Timing& timing) override {
+        callback();
+        return sleepFor(delay());
+    }
+
+private:
+    const std::function<microseconds()> delay;
+    const std::function<void()> callback;
 };
 
 }}    // namespace farmhub::client
