@@ -6,7 +6,7 @@ namespace farmhub { namespace client {
 
 class WiFiProvider {
 public:
-    virtual void begin() = 0;
+    virtual void begin(const String& hostname) = 0;
 };
 
 }}    // namespace farmhub::client

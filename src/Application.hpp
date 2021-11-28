@@ -126,8 +126,10 @@ private:
             appConfig.begin();
         }
 
-        wifiProvider.begin();
-        WiFi.setHostname(hostname.c_str());
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.println("WiFi connected, IP address: " + WiFi.localIP().toString() + ", hostname: " + WiFi.getHostname());
+        }, SYSTEM_EVENT_STA_GOT_IP);
+        wifiProvider.begin(hostname);
         mdnsHandler.begin(hostname, name, version);
         otaHandler.begin(hostname);
         mqttHandler.begin();
