@@ -117,9 +117,9 @@ private:
 
         const String& hostname = deviceConfig.getHostname();
 
-        Serial.printf("Running on %s %s instance '%s' with hostname '%s'\n",
+        Serial.printf("Running on %s %s instance '%s' with hostname '%s', MAC address %s\n",
             deviceConfig.type.get().c_str(), deviceConfig.model.get().c_str(),
-            deviceConfig.instance.get().c_str(), hostname.c_str());
+            deviceConfig.instance.get().c_str(), hostname.c_str(), WiFi.macAddress().c_str());
 
         if (deviceConfig.isResetButtonPressed()) {
             Serial.println("Reset button pressed, skipping application configuration");
@@ -128,12 +128,29 @@ private:
             appConfig.begin();
         }
 
-        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-            Serial.println("WiFi connected, IP address: " + WiFi.localIP().toString() + ", hostname: " + WiFi.getHostname());
-        }, SYSTEM_EVENT_STA_GOT_IP);
-        wifiProvider.begin(hostname);
         mdnsHandler.begin(hostname, name, version);
+
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.println("WiFi: connected to " + WiFi.SSID());
+        },
+            SYSTEM_EVENT_STA_CONNECTED);
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.printf("WiFi: got IP address: %s, hostname: '%s'\n",
+                WiFi.localIP().toString().c_str(), WiFi.getHostname());
+        },
+            SYSTEM_EVENT_STA_GOT_IP);
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.println("WiFi: lost IP address");
+        },
+            SYSTEM_EVENT_STA_LOST_IP);
+        WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+            Serial.println("WiFi: disconnected");
+        },
+            SYSTEM_EVENT_STA_DISCONNECTED);
+        wifiProvider.begin(hostname);
+
         otaHandler.begin(hostname);
+
         mqttHandler.begin();
         mqttHandler.publish(
             "init", [&](JsonObject& json) {
