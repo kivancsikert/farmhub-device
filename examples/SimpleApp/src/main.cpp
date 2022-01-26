@@ -71,10 +71,10 @@ protected:
 private:
     SimpleDeviceConfig deviceConfig;
     SimpleAppConfig appConfig;
-    NonBlockingWiFiManagerProvider wifiProvider { tasks() };
+    NonBlockingWiFiManagerProvider wifiProvider { tasks };
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher { tasks(), appConfig.publishInterval, mqtt };
-    SimpleUptimeTask uptimeTask { tasks(), appConfig.uptimeInterval };
+    TelemetryPublisher telemetryPublisher { tasks, appConfig.publishInterval, mqtt };
+    SimpleUptimeTask uptimeTask { tasks, appConfig.uptimeInterval };
 
     int iterations = 0;
 };
