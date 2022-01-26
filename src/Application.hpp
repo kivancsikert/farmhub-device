@@ -117,9 +117,9 @@ private:
 
         const String& hostname = deviceConfig.getHostname();
 
-        Serial.printf("Running on %s %s instance '%s' with hostname '%s'\n",
+        Serial.printf("Running on %s %s instance '%s' with hostname '%s', MAC address %s\n",
             deviceConfig.type.get().c_str(), deviceConfig.model.get().c_str(),
-            deviceConfig.instance.get().c_str(), hostname.c_str());
+            deviceConfig.instance.get().c_str(), hostname.c_str(), WiFi.macAddress().c_str());
 
         if (deviceConfig.isResetButtonPressed()) {
             Serial.println("Reset button pressed, skipping application configuration");
