@@ -80,9 +80,11 @@ public:
     NonBlockingWiFiManagerProvider(
         TaskContainer& tasks,
         seconds connectionTimeout = seconds { 20 },
-        seconds configurationTimeout = seconds { 180 })
+        seconds configurationTimeout = seconds { 180 },
+        seconds connectionCheckInterval = minutes { 1 })
         : AbstractWiFiManagerProvider(connectionTimeout, configurationTimeout)
-        , BaseTask(tasks, "WiFiManager") {};
+        , BaseTask(tasks, "WiFiManager")
+        , connectionCheckInterval(connectionCheckInterval) {};
 
     enum class State {
         UNINITIALIZED,
@@ -105,8 +107,7 @@ protected:
         }
         if (WiFi.isConnected()) {
             state = State::CONNECTED;
-            // TODO Make this configurable
-            return sleepAtMost(minutes { 1 });
+            return sleepAtMost(connectionCheckInterval);
         }
 
         if (state == State::CONFIGURING) {
@@ -135,6 +136,7 @@ protected:
     }
 
 private:
+    const seconds connectionCheckInterval;
     State state = State::UNINITIALIZED;
     time_point<boot_clock> configurationStartTime;
 };
