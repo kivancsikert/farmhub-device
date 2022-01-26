@@ -135,8 +135,8 @@ private:
         },
             SYSTEM_EVENT_STA_CONNECTED);
         WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-            Serial.printf("WiFi: got IP address: %s\n",
-                WiFi.localIP().toString().c_str());
+            Serial.printf("WiFi: got IP address: %s, hostname: '%s'\n",
+                WiFi.localIP().toString().c_str(), WiFi.getHostname());
         },
             SYSTEM_EVENT_STA_GOT_IP);
         WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {

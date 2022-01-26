@@ -25,7 +25,9 @@ public:
         // these are stored by the ESP library
         // wm.resetSettings();
 
-        wm.setHostname(hostname.c_str());
+        // Must store hostname, because WiFiManager won't make a copy
+        this->hostname = hostname;
+        wm.setHostname(this->hostname.c_str());
 
         // Allow some time for connecting to the WIFI, otherwise
         // open configuration portal
@@ -38,6 +40,7 @@ public:
 
 protected:
     const seconds configurationTimeout;
+    String hostname;
     WiFiManager wm;
 };
 
@@ -85,7 +88,6 @@ public:
         AbstractWiFiManagerProvider::begin(hostname);
 
         wm.setConfigPortalBlocking(false);
-        configHostname = hostname + "-config";
         state = State::INITIALIZED;
     }
 
@@ -114,6 +116,7 @@ protected:
         // automatically connect using saved credentials if they exist
         // If connection fails it starts an access point with the specified name
         Serial.println("WiFi: trying to connect using stored credentials");
+        String configHostname = hostname + "-config";
         if (wm.autoConnect(configHostname.c_str())) {
             Serial.println("WiFi: connected to WIFI");
             state = State::CONNECTED;
@@ -125,7 +128,6 @@ protected:
     }
 
 private:
-    String configHostname;
     State state = State::UNINITIALIZED;
     time_point<boot_clock> configurationStartTime;
 };
