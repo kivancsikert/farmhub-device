@@ -71,22 +71,18 @@ protected:
         , wifiProvider(wifiProvider)
         , httpUpdateCommand(version)
         , taskContainer(maxSleepTime)
-        , mqttHandler(taskContainer, mdns, deviceConfig.mqtt, appConfig) {
+        , mqtt(taskContainer, mdns, deviceConfig.mqtt, appConfig) {
 
-        mqttHandler.registerCommand("echo", echoCommand);
-        mqttHandler.registerCommand("restart", restartCommand);
-        mqttHandler.registerCommand("files/list", fileListCommand);
-        mqttHandler.registerCommand("files/read", fileReadCommand);
-        mqttHandler.registerCommand("files/write", fileWriteCommand);
-        mqttHandler.registerCommand("files/remove", fileRemoveCommand);
-        mqttHandler.registerCommand("update", httpUpdateCommand);
+        mqtt.registerCommand("echo", echoCommand);
+        mqtt.registerCommand("restart", restartCommand);
+        mqtt.registerCommand("files/list", fileListCommand);
+        mqtt.registerCommand("files/read", fileReadCommand);
+        mqtt.registerCommand("files/write", fileWriteCommand);
+        mqtt.registerCommand("files/remove", fileRemoveCommand);
+        mqtt.registerCommand("update", httpUpdateCommand);
     }
 
     virtual void beginApp() {
-    }
-
-    MqttHandler& mqtt() {
-        return mqttHandler;
     }
 
     TaskContainer& tasks() {
@@ -147,8 +143,8 @@ private:
 
         otaHandler.begin(hostname);
 
-        mqttHandler.begin();
-        mqttHandler.publish(
+        mqtt.begin();
+        mqtt.publish(
             "init", [&](JsonObject& json) {
                 json["type"] = deviceConfig.type.get();
                 json["instance"] = deviceConfig.instance.get();
@@ -194,7 +190,7 @@ private:
 public:
     TaskContainer taskContainer;
     MdnsHandler mdns;
-    MqttHandler mqttHandler;
+    MqttHandler mqtt;
 
 private:
     OtaHandler otaHandler { taskContainer };

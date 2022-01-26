@@ -73,7 +73,7 @@ private:
     SimpleAppConfig appConfig;
     NonBlockingWiFiManagerProvider wifiProvider { tasks() };
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher { tasks(), appConfig.publishInterval, mqtt() };
+    TelemetryPublisher telemetryPublisher { tasks(), appConfig.publishInterval, mqtt };
     SimpleUptimeTask uptimeTask { tasks(), appConfig.uptimeInterval };
 
     int iterations = 0;
