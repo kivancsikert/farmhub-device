@@ -71,7 +71,7 @@ protected:
         , wifiProvider(wifiProvider)
         , httpUpdateCommand(version)
         , taskContainer(maxSleepTime)
-        , mqttHandler(taskContainer, mdnsHandler, deviceConfig.mqtt, appConfig) {
+        , mqttHandler(taskContainer, mdns, deviceConfig.mqtt, appConfig) {
 
         mqttHandler.registerCommand("echo", echoCommand);
         mqttHandler.registerCommand("restart", restartCommand);
@@ -83,10 +83,6 @@ protected:
     }
 
     virtual void beginApp() {
-    }
-
-    MdnsHandler& mdns() {
-        return mdnsHandler;
     }
 
     MqttHandler& mqtt() {
@@ -128,7 +124,7 @@ private:
             appConfig.begin();
         }
 
-        mdnsHandler.begin(hostname, name, version);
+        mdns.begin(hostname, name, version);
 
         WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
             Serial.println("WiFi: connected to " + WiFi.SSID());
@@ -197,7 +193,7 @@ private:
 
 public:
     TaskContainer taskContainer;
-    MdnsHandler mdnsHandler;
+    MdnsHandler mdns;
     MqttHandler mqttHandler;
 
 private:
