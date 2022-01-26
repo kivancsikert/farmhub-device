@@ -12,7 +12,7 @@ public:
 
     void begin(const String& hostname, const String& instanceName, const String& version) {
         WiFi.onEvent(
-            [&](WiFiEvent_t event, WiFiEventInfo_t info) {
+            [hostname, instanceName, version](WiFiEvent_t event, WiFiEventInfo_t info) {
                 MDNS.begin(hostname.c_str());
                 MDNS.setInstanceName(instanceName);
                 MDNS.addServiceTxt("arduino", "tcp", "version", version);
