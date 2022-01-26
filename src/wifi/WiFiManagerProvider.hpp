@@ -13,8 +13,9 @@ namespace farmhub { namespace client {
 class AbstractWiFiManagerProvider
     : public WiFiProvider {
 public:
-    AbstractWiFiManagerProvider(seconds configurationTimeout)
-        : configurationTimeout(configurationTimeout) {
+    AbstractWiFiManagerProvider(seconds connectionTimeout, seconds configurationTimeout)
+        : connectionTimeout(connectionTimeout)
+        , configurationTimeout(configurationTimeout) {
     }
 
     virtual void begin(const String& hostname) override {
@@ -31,7 +32,7 @@ public:
 
         // Allow some time for connecting to the WIFI, otherwise
         // open configuration portal
-        wm.setConnectTimeout(20);
+        wm.setConnectTimeout(connectionTimeout.count());
 
         wm.setDebugOutput(false);
 
@@ -39,6 +40,7 @@ public:
     }
 
 protected:
+    const seconds connectionTimeout;
     const seconds configurationTimeout;
     String hostname;
     WiFiManager wm;
@@ -47,8 +49,10 @@ protected:
 class BlockingWiFiManagerProvider
     : public AbstractWiFiManagerProvider {
 public:
-    BlockingWiFiManagerProvider(seconds configurationTimeout = seconds { 0 })
-        : AbstractWiFiManagerProvider(configurationTimeout) {
+    BlockingWiFiManagerProvider(
+        seconds connectionTimeout = seconds { 20 },
+        seconds configurationTimeout = seconds { 0 })
+        : AbstractWiFiManagerProvider(connectionTimeout, configurationTimeout) {
     }
 
     virtual void begin(const String& hostname) override {
@@ -73,8 +77,11 @@ class NonBlockingWiFiManagerProvider
     : public AbstractWiFiManagerProvider,
       public BaseTask {
 public:
-    NonBlockingWiFiManagerProvider(TaskContainer& tasks, seconds configurationTimeout = seconds { 180 })
-        : AbstractWiFiManagerProvider(configurationTimeout)
+    NonBlockingWiFiManagerProvider(
+        TaskContainer& tasks,
+        seconds connectionTimeout = seconds { 20 },
+        seconds configurationTimeout = seconds { 180 })
+        : AbstractWiFiManagerProvider(connectionTimeout, configurationTimeout)
         , BaseTask(tasks, "WiFiManager") {};
 
     enum class State {
