@@ -1,0 +1,6 @@
+{
+  "type": "simple-example",
+  "model": "mk1",
+  "instance": "test",
+  "description": "Simple Example for FarmHub Client – https://github.com/kivancsikert/farmhub-client/"
+}
