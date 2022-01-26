@@ -66,12 +66,12 @@ protected:
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
-        , taskContainer(maxSleepTime)
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(tasks(), mdnsHandler, deviceConfig.mqtt, appConfig)
-        , httpUpdateCommand(version) {
+        , httpUpdateCommand(version)
+        , taskContainer(maxSleepTime)
+        , mqttHandler(taskContainer, mdnsHandler, deviceConfig.mqtt, appConfig) {
 
         mqttHandler.registerCommand("echo", echoCommand);
         mqttHandler.registerCommand("restart", restartCommand);
@@ -184,12 +184,9 @@ private:
         }
     }
 
-    TaskContainer taskContainer;
     DeviceConfiguration& deviceConfig;
     FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
-    MdnsHandler mdnsHandler;
-    MqttHandler mqttHandler;
     commands::EchoCommand echoCommand;
     commands::FileListCommand fileListCommand;
     commands::FileReadCommand fileReadCommand;
@@ -197,7 +194,14 @@ private:
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-    OtaHandler otaHandler { tasks() };
+
+public:
+    TaskContainer taskContainer;
+    MdnsHandler mdnsHandler;
+    MqttHandler mqttHandler;
+
+private:
+    OtaHandler otaHandler { taskContainer };
 };
 
 }}    // namespace farmhub::client
