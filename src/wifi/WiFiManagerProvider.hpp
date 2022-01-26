@@ -110,8 +110,9 @@ protected:
             return sleepAtMost(connectionCheckInterval);
         }
 
+        auto now = boot_clock::now();
         if (state == State::CONFIGURING) {
-            auto configurationTime = boot_clock::now() - configurationStartTime;
+            auto configurationTime = now - configurationStartTime;
             if (configurationTime < configurationTimeout) {
                 wm.process();
                 return sleepFor(milliseconds { 100 });
@@ -130,6 +131,7 @@ protected:
             state = State::CONNECTED;
         } else {
             Serial.println("WiFi: configuration portal started, timeout: " + String((int) configurationTimeout.count()) + " seconds");
+            configurationStartTime = now;
             state = State::CONFIGURING;
         }
         return sleepFor(milliseconds { 100 });
