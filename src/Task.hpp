@@ -226,7 +226,7 @@ public:
     template <typename Duration = milliseconds>
     IntervalTask(TaskContainer& tasks, const String& name, const Property<Duration>& delay, std::function<void()> callback)
         : BaseTask(tasks, name)
-        , delay([delay]() {
+        , delay([&delay]() {
             return duration_cast<microseconds>(delay.get());
         })
         , callback(callback) {
