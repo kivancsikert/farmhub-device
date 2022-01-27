@@ -17,10 +17,9 @@ public:
 class SimpleAppConfig : public Application::AppConfiguration {
 public:
     SimpleAppConfig()
-        : Application::AppConfiguration() {
+        : Application::AppConfiguration(seconds { 5 }) {
     }
 
-    Property<seconds> publishInterval { this, "publishInterval", seconds(5) };
     Property<seconds> uptimeInterval { this, "uptimeInterval", seconds(10) };
 };
 
@@ -73,7 +72,6 @@ private:
     SimpleAppConfig appConfig;
     NonBlockingWiFiManagerProvider wifiProvider { tasks };
     SimpleTelemetryProvider telemetry;
-    TelemetryPublisher telemetryPublisher { tasks, mqtt, appConfig.publishInterval };
     SimpleUptimeTask uptimeTask { tasks, appConfig.uptimeInterval };
 
     int iterations = 0;

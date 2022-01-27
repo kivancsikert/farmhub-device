@@ -8,6 +8,7 @@
 #include <MdnsHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
+#include <Telemetry.hpp>
 #include <commands/EchoCommand.hpp>
 #include <commands/FileCommands.hpp>
 #include <commands/HttpUpdateCommand.hpp>
@@ -59,8 +60,11 @@ public:
     class AppConfiguration : public FileConfiguration {
     public:
         AppConfiguration(seconds defaultHeartbeat = minutes { 1 })
-            : FileConfiguration("application", "/config.json") {
+            : FileConfiguration("application", "/config.json")
+            , heartbeat(this, "heartbeat", defaultHeartbeat) {
         }
+
+        Property<seconds> heartbeat;
     };
 
     void deepSleepFor(microseconds duration) {
@@ -91,7 +95,8 @@ protected:
         , wifiProvider(wifiProvider)
         , httpUpdateCommand(version)
         , tasks(maxSleepTime)
-        , mqtt(tasks, mdns, deviceConfig.mqtt, appConfig) {
+        , mqtt(tasks, mdns, deviceConfig.mqtt, appConfig)
+        , telemetryPublisher(tasks, mqtt, appConfig.heartbeat) {
 
         mqtt.registerCommand("echo", echoCommand);
         mqtt.registerCommand("restart", restartCommand);
@@ -207,6 +212,7 @@ public:
     TaskContainer tasks;
     MdnsHandler mdns;
     MqttHandler mqtt;
+    TelemetryPublisher telemetryPublisher;
 
 private:
     OtaHandler otaHandler { tasks };
