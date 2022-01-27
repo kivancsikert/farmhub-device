@@ -23,7 +23,7 @@ public:
     }
 
     void loop() {
-        taskContainer.loop();
+        tasks.loop();
     }
 
     class DeviceConfiguration : public FileConfiguration {
@@ -66,35 +66,23 @@ protected:
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
         , version(version)
-        , taskContainer(maxSleepTime)
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
-        , mqttHandler(tasks(), mdnsHandler, deviceConfig.mqtt, appConfig)
-        , httpUpdateCommand(version) {
+        , httpUpdateCommand(version)
+        , tasks(maxSleepTime)
+        , mqtt(tasks, mdns, deviceConfig.mqtt, appConfig) {
 
-        mqttHandler.registerCommand("echo", echoCommand);
-        mqttHandler.registerCommand("restart", restartCommand);
-        mqttHandler.registerCommand("files/list", fileListCommand);
-        mqttHandler.registerCommand("files/read", fileReadCommand);
-        mqttHandler.registerCommand("files/write", fileWriteCommand);
-        mqttHandler.registerCommand("files/remove", fileRemoveCommand);
-        mqttHandler.registerCommand("update", httpUpdateCommand);
+        mqtt.registerCommand("echo", echoCommand);
+        mqtt.registerCommand("restart", restartCommand);
+        mqtt.registerCommand("files/list", fileListCommand);
+        mqtt.registerCommand("files/read", fileReadCommand);
+        mqtt.registerCommand("files/write", fileWriteCommand);
+        mqtt.registerCommand("files/remove", fileRemoveCommand);
+        mqtt.registerCommand("update", httpUpdateCommand);
     }
 
     virtual void beginApp() {
-    }
-
-    MdnsHandler& mdns() {
-        return mdnsHandler;
-    }
-
-    MqttHandler& mqtt() {
-        return mqttHandler;
-    }
-
-    TaskContainer& tasks() {
-        return taskContainer;
     }
 
     const String name;
@@ -128,7 +116,7 @@ private:
             appConfig.begin();
         }
 
-        mdnsHandler.begin(hostname, name, version);
+        mdns.begin(hostname, name, version);
 
         WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
             Serial.println("WiFi: connected to " + WiFi.SSID());
@@ -151,8 +139,8 @@ private:
 
         otaHandler.begin(hostname);
 
-        mqttHandler.begin();
-        mqttHandler.publish(
+        mqtt.begin();
+        mqtt.publish(
             "init", [&](JsonObject& json) {
                 json["type"] = deviceConfig.type.get();
                 json["instance"] = deviceConfig.instance.get();
@@ -184,12 +172,9 @@ private:
         }
     }
 
-    TaskContainer taskContainer;
     DeviceConfiguration& deviceConfig;
     FileConfiguration& appConfig;
     WiFiProvider& wifiProvider;
-    MdnsHandler mdnsHandler;
-    MqttHandler mqttHandler;
     commands::EchoCommand echoCommand;
     commands::FileListCommand fileListCommand;
     commands::FileReadCommand fileReadCommand;
@@ -197,7 +182,14 @@ private:
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
     commands::RestartCommand restartCommand;
-    OtaHandler otaHandler { tasks() };
+
+public:
+    TaskContainer tasks;
+    MdnsHandler mdns;
+    MqttHandler mqtt;
+
+private:
+    OtaHandler otaHandler { tasks };
 };
 
 }}    // namespace farmhub::client
