@@ -56,6 +56,13 @@ public:
         }
     };
 
+    class AppConfiguration : public FileConfiguration {
+    public:
+        AppConfiguration(seconds defaultHeartbeat = minutes { 1 })
+            : FileConfiguration("application", "/config.json") {
+        }
+    };
+
     void deepSleepFor(microseconds duration) {
         mqtt.publish("sleep", [duration](JsonObject json) {
             json["duration"] = duration_cast<seconds>(duration).count();
@@ -74,7 +81,7 @@ protected:
         const String& name,
         const String& version,
         DeviceConfiguration& deviceConfig,
-        FileConfiguration& appConfig,
+        AppConfiguration& appConfig,
         WiFiProvider& wifiProvider,
         microseconds maxSleepTime = minutes { 1 })
         : name(name)
@@ -186,7 +193,7 @@ private:
     }
 
     DeviceConfiguration& deviceConfig;
-    FileConfiguration& appConfig;
+    AppConfiguration& appConfig;
     WiFiProvider& wifiProvider;
     commands::EchoCommand echoCommand;
     commands::FileListCommand fileListCommand;
