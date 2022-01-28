@@ -56,6 +56,19 @@ public:
         }
     };
 
+    void deepSleepFor(microseconds duration) {
+        mqtt.publish("sleep", [duration](JsonObject json) {
+            json["duration"] = duration_cast<seconds>(duration).count();
+        });
+        mqtt.flush();
+
+        Serial.printf("Sleeping for %ld seconds\n", (long) duration_cast<seconds>(duration).count());
+        Serial.flush();
+
+        esp_sleep_enable_timer_wakeup(duration.count());
+        esp_deep_sleep_start();
+    }
+
 protected:
     Application(
         const String& name,

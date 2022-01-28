@@ -118,6 +118,20 @@ public:
         return publish(suffix, doc, retain, qos);
     }
 
+    void flush() {
+        while (!publishQueue.isEmpty()) {
+            const MqttMessage& message = publishQueue.pop();
+            bool success = mqttClient.publish(message.topic, message.payload, message.retain, message.qos);
+#ifdef DUMP_MQTT
+            Serial.printf("Published to '%s' (size: %d)\n", message.topic.c_str(), message.payload.length());
+#endif
+            if (!success) {
+                Serial.printf("Error publishing to MQTT topic at '%s', error = %d\n",
+                    message.topic.c_str(), mqttClient.lastError());
+            }
+        }
+    }
+
     bool subscribe(const String& suffix, int qos) {
         if (!mqttClient.connected()) {
             return false;
@@ -161,17 +175,7 @@ protected:
             }
         }
 
-        while (!publishQueue.isEmpty()) {
-            const MqttMessage& message = publishQueue.pop();
-            bool success = mqttClient.publish(message.topic, message.payload, message.retain, message.qos);
-#ifdef DUMP_MQTT
-            Serial.printf("Published to '%s' (size: %d)\n", message.topic.c_str(), message.payload.length());
-#endif
-            if (!success) {
-                Serial.printf("Error publishing to MQTT topic at '%s', error = %d\n",
-                    message.topic.c_str(), mqttClient.lastError());
-            }
-        }
+        flush();
 
         mqttClient.loop();
         // TODO We could repeat sooner if we couldn't publish everything
