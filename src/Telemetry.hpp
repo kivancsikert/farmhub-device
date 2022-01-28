@@ -19,8 +19,8 @@ class TelemetryPublisher
 public:
     TelemetryPublisher(
         TaskContainer& tasks,
-        milliseconds interval,
         MqttHandler& mqtt,
+        milliseconds interval,
         const String& topic = "telemetry")
         : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
@@ -30,8 +30,8 @@ public:
     template <typename Duration>
     TelemetryPublisher(
         TaskContainer& tasks,
-        Property<Duration>& interval,
         MqttHandler& mqtt,
+        Property<Duration>& interval,
         const String& topic = "telemetry")
         : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
