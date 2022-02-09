@@ -8,6 +8,7 @@
 #include <MdnsHandler.hpp>
 #include <MqttHandler.hpp>
 #include <OtaHandler.hpp>
+#include <Sleep.hpp>
 #include <Telemetry.hpp>
 #include <commands/EchoCommand.hpp>
 #include <commands/FileCommands.hpp>
@@ -67,19 +68,6 @@ public:
         Property<seconds> heartbeat;
     };
 
-    void deepSleepFor(microseconds duration) {
-        mqtt.publish("sleep", [duration](JsonObject json) {
-            json["duration"] = duration_cast<seconds>(duration).count();
-        });
-        mqtt.flush();
-
-        Serial.printf("Sleeping for %ld seconds\n", (long) duration_cast<seconds>(duration).count());
-        Serial.flush();
-
-        esp_sleep_enable_timer_wakeup(duration.count());
-        esp_deep_sleep_start();
-    }
-
 protected:
     Application(
         const String& name,
@@ -94,9 +82,7 @@ protected:
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
         , httpUpdateCommand(version)
-        , tasks(maxSleepTime)
-        , mqtt(tasks, mdns, deviceConfig.mqtt, appConfig)
-        , telemetryPublisher(tasks, mqtt, appConfig.heartbeat) {
+        , tasks(maxSleepTime) {
 
         mqtt.registerCommand("echo", echoCommand);
         mqtt.registerCommand("restart", restartCommand);
@@ -211,8 +197,9 @@ private:
 public:
     TaskContainer tasks;
     MdnsHandler mdns;
-    MqttHandler mqtt;
-    TelemetryPublisher telemetryPublisher;
+    SleepHandler sleep;
+    MqttHandler mqtt { tasks, mdns, sleep, deviceConfig.mqtt, appConfig };
+    TelemetryPublisher telemetryPublisher { tasks, mqtt, appConfig.heartbeat };
 
 private:
     OtaHandler otaHandler { tasks };
