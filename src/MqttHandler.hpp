@@ -184,9 +184,10 @@ protected:
         return sleepFor(milliseconds { MQTT_POLL_FREQUENCY });
     }
 
-    virtual void onDeepSleep(const SleepEvent& event) override {
-        publish("sleep", [event](JsonObject json) {
-            json["duration"] = duration_cast<seconds>(event.duration).count();
+    virtual void onDeepSleep(SleepEvent& event) override {
+        auto duration = event.duration;
+        publish("sleep", [duration](JsonObject json) {
+            json["duration"] = duration_cast<seconds>(duration).count();
         });
         flush();
     }

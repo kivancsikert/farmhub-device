@@ -9,26 +9,32 @@ using namespace std::chrono;
 
 namespace farmhub { namespace client {
 
-struct SleepEvent {
+class SleepEvent {
+private:
     SleepEvent(microseconds duration)
         : duration(duration) {
     }
+    friend class SleepHandler;
 
+public:
     const microseconds duration;
 };
 
-struct WakeEvent {
+class WakeEvent {
+private:
     WakeEvent(esp_sleep_source_t source)
         : source(source) {
     }
+    friend class SleepHandler;
 
+public:
     const esp_sleep_source_t source;
 };
 
 class SleepListener {
 protected:
-    virtual void onWake(const WakeEvent& event) = 0;
-    virtual void onDeepSleep(const SleepEvent& event) = 0;
+    virtual void onWake(WakeEvent& event) = 0;
+    virtual void onDeepSleep(SleepEvent& event) = 0;
     friend class SleepHandler;
 };
 
@@ -72,8 +78,8 @@ protected:
         sleepHandler.registerListener(this);
     }
 
-    virtual void onWake(const WakeEvent& event) override {};
-    virtual void onDeepSleep(const SleepEvent& event) override {};
+    virtual void onWake(WakeEvent& event) override {};
+    virtual void onDeepSleep(SleepEvent& event) override {};
 };
 
 }}    // namespace farmhub::client
