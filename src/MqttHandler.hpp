@@ -11,6 +11,7 @@
 
 #include <Configuration.hpp>
 #include <MdnsHandler.hpp>
+#include <Sleep.hpp>
 #include <Task.hpp>
 
 #define MQTT_BUFFER_SIZE 2048
@@ -23,7 +24,7 @@ using namespace std::chrono;
 namespace farmhub { namespace client {
 
 class MqttHandler
-    : public BaseTask {
+    : public BaseTask, public BaseSleepListener {
 public:
     class Config : public NamedConfigurationSection {
     public:
@@ -37,8 +38,9 @@ public:
         Property<String> topic { this, "topic", "" };
     };
 
-    MqttHandler(TaskContainer& tasks, MdnsHandler& mdns, const Config& mqttConfig, Configuration& appConfig)
+    MqttHandler(TaskContainer& tasks, MdnsHandler& mdns, SleepHandler& sleep, const Config& mqttConfig, Configuration& appConfig)
         : BaseTask(tasks, "MQTT")
+        , BaseSleepListener(sleep)
         , mqttClient(MQTT_BUFFER_SIZE)
         , mdns(mdns)
         , mqttConfig(mqttConfig)
@@ -180,6 +182,14 @@ protected:
         mqttClient.loop();
         // TODO We could repeat sooner if we couldn't publish everything
         return sleepFor(milliseconds { MQTT_POLL_FREQUENCY });
+    }
+
+    virtual void onDeepSleep(SleepEvent& event) override {
+        auto duration = event.duration;
+        publish("sleep", [duration](JsonObject json) {
+            json["duration"] = duration_cast<seconds>(duration).count();
+        });
+        flush();
     }
 
 private:
