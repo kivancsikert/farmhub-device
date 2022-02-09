@@ -27,8 +27,8 @@ struct WakeEvent {
 
 class SleepListener {
 protected:
-    virtual void onSleep(const SleepEvent& event) = 0;
     virtual void onWake(const WakeEvent& event) = 0;
+    virtual void onDeepSleep(const SleepEvent& event) = 0;
     friend class SleepHandler;
 };
 
@@ -49,7 +49,7 @@ public:
 
         SleepEvent event { duration };
         for (auto& listener : listeners) {
-            listener.get().onSleep(event);
+            listener.get().onDeepSleep(event);
         }
 
         esp_sleep_enable_timer_wakeup(duration.count());
@@ -72,8 +72,8 @@ protected:
         sleepHandler.registerListener(this);
     }
 
-    virtual void onSleep(const SleepEvent& event) override {};
     virtual void onWake(const WakeEvent& event) override {};
+    virtual void onDeepSleep(const SleepEvent& event) override {};
 };
 
 }}    // namespace farmhub::client
