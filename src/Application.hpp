@@ -161,6 +161,8 @@ private:
             },
             true);
 
+        sleep.begin();
+
         beginApp();
     }
 
