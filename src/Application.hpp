@@ -151,15 +151,6 @@ private:
         otaHandler.begin(hostname);
 
         mqtt.begin();
-        mqtt.publish(
-            "init", [&](JsonObject& json) {
-                json["type"] = deviceConfig.type.get();
-                json["instance"] = deviceConfig.instance.get();
-                json["model"] = deviceConfig.model.get();
-                json["app"] = name;
-                json["version"] = version;
-            },
-            true);
 
         sleep.begin();
 
@@ -185,6 +176,34 @@ private:
         }
     }
 
+    class ReportWakeUpHandler : BaseSleepListener {
+    public:
+        ReportWakeUpHandler(SleepHandler& sleep, MqttHandler& mqtt, const String& app, const String& version, const DeviceConfiguration& deviceConfig)
+            : BaseSleepListener(sleep)
+            , mqtt(mqtt)
+            , app(app)
+            , version(version)
+            , deviceConfig(deviceConfig) {
+        }
+
+        void onWake(WakeEvent& event) override {
+            mqtt.publish("wakeup", [&](JsonObject& json) {
+                json["type"] = deviceConfig.type.get();
+                json["instance"] = deviceConfig.instance.get();
+                json["model"] = deviceConfig.model.get();
+                json["app"] = app;
+                json["version"] = version;
+                json["wakeup"] = event.source;
+            });
+        }
+
+    private:
+        MqttHandler& mqtt;
+        const String app;
+        const String version;
+        const DeviceConfiguration& deviceConfig;
+    };
+
     DeviceConfiguration& deviceConfig;
     AppConfiguration& appConfig;
     WiFiProvider& wifiProvider;
@@ -205,6 +224,7 @@ public:
 
 private:
     OtaHandler otaHandler { tasks };
+    ReportWakeUpHandler wakeUpHandler { sleep, mqtt, name, version, deviceConfig };
 };
 
 }}    // namespace farmhub::client
