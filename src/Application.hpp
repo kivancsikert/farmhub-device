@@ -187,7 +187,7 @@ private:
         }
 
         void onWake(WakeEvent& event) override {
-            mqtt.publish("wakeup", [&](JsonObject& json) {
+            mqtt.publish("init", [&](JsonObject& json) {
                 json["type"] = deviceConfig.type.get();
                 json["instance"] = deviceConfig.instance.get();
                 json["model"] = deviceConfig.model.get();
