@@ -152,9 +152,9 @@ private:
 
         mqtt.begin();
 
-        sleep.begin();
-
         beginApp();
+
+        sleep.handleWake();
     }
 
     void beginFileSystem() {
