@@ -42,7 +42,7 @@ class SleepHandler {
 public:
     SleepHandler() = default;
 
-    void begin() {
+    void handleWake() {
         WakeEvent event { esp_sleep_get_wakeup_cause() };
         for (auto& listener : listeners) {
             listener.get().onWake(event);
