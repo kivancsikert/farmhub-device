@@ -64,10 +64,10 @@ public:
 
         // Automatically connect using saved credentials,
         // if connection fails, it starts an access point
-        // with an auto-generated SSID and no password,
+        // with the host name for SSID and no password,
         // then goes into a blocking loop awaiting
         // configuration and will return success result.
-        if (!wm.autoConnect()) {
+        if (!wm.autoConnect(hostname.c_str())) {
             fatalError("Failed to connect to WIFI");
         }
     }
@@ -125,8 +125,7 @@ protected:
         // automatically connect using saved credentials if they exist
         // If connection fails it starts an access point with the specified name
         Serial.println("WiFi: trying to connect using stored credentials");
-        String configHostname = hostname + "-config";
-        if (wm.autoConnect(configHostname.c_str())) {
+        if (wm.autoConnect(hostname.c_str())) {
             Serial.println("WiFi: connected to WIFI");
             state = State::CONNECTED;
         } else {
