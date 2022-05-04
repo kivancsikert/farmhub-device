@@ -17,7 +17,7 @@ public:
                 MDNS.setInstanceName(instanceName);
                 MDNS.addServiceTxt("arduino", "tcp", "version", version);
             },
-            SYSTEM_EVENT_STA_GOT_IP);
+            ARDUINO_EVENT_WIFI_STA_GOT_IP);
     }
 
     // Lookup host name via MDNS explicitly
