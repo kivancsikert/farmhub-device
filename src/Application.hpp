@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 
 #include <Configuration.hpp>
+#include <Events.hpp>
 #include <Farmhub.hpp>
 #include <MdnsHandler.hpp>
 #include <MqttHandler.hpp>
@@ -221,6 +222,7 @@ public:
     SleepHandler sleep;
     MqttHandler mqtt { tasks, mdns, sleep, deviceConfig.mqtt, appConfig };
     TelemetryPublisher telemetryPublisher { tasks, mqtt, appConfig.heartbeat };
+    EventHandler events { mqtt, telemetryPublisher };
 
 private:
     OtaHandler otaHandler { tasks };
