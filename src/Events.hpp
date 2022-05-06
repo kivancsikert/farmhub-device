@@ -17,7 +17,7 @@ public:
     }
 
     bool publishEvent(const String& event, std::function<void(JsonObject&)> populateEvent, bool skipTelemetry = false) {
-        bool result = mqtt.publish(event, [populateEvent](JsonObject& json) {
+        bool result = mqtt.publish("events/" + event, [populateEvent](JsonObject& json) {
             populateEvent(json);
         });
         if (!skipTelemetry) {
