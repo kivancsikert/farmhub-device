@@ -42,26 +42,17 @@ public:
         providers.push_back(std::reference_wrapper<TelemetryProvider>(provider));
     }
 
-    [[deprecated("Use publish() directly")]]
-    void populate(JsonObject& json) {
-        populateInternal(json);
-    }
-
     void publish() {
         DynamicJsonDocument doc(2048);
         JsonObject root = doc.to<JsonObject>();
         root["uptime"] = millis();
-        populateInternal(root);
+        for (auto& provider : providers) {
+            provider.get().populateTelemetry(root);
+        }
         mqtt.publish(topic, doc);
     }
 
 private:
-    void populateInternal(JsonObject& json) {
-        for (auto& provider : providers) {
-            provider.get().populateTelemetry(json);
-        }
-    }
-
     MqttHandler& mqtt;
     const String topic;
     std::list<std::reference_wrapper<TelemetryProvider>> providers;
