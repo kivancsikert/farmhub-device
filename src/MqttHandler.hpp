@@ -38,6 +38,10 @@ public:
         Property<String> topic { this, "topic", "" };
     };
 
+    enum class RetainType {
+        NoRetain, Retain
+    };
+
     MqttHandler(TaskContainer& tasks, MdnsHandler& mdns, SleepHandler& sleep, const Config& mqttConfig, Configuration& appConfig)
         : BaseTask(tasks, "MQTT")
         , BaseSleepListener(sleep)
@@ -98,11 +102,11 @@ public:
         mqttClient.begin(client);
     }
 
-    bool publish(const String& suffix, const JsonDocument& json, bool retain = false, int qos = 0) {
+    bool publish(const String& suffix, const JsonDocument& json, RetainType retain = RetainType::NoRetain, int qos = 0) {
         String fullTopic = mqttConfig.topic.get() + "/" + suffix;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
-            fullTopic.c_str(), (retain ? " (retain)" : ""), qos);
+            fullTopic.c_str(), (retain == RetainType::Retain ? " (retain)" : ""), qos);
         serializeJsonPretty(json, Serial);
         Serial.println();
 #endif
@@ -113,7 +117,7 @@ public:
         return storedWithoutDropping;
     }
 
-    bool publish(const String& suffix, std::function<void(JsonObject&)> populate, bool retain = false, int qos = 0, int size = MQTT_BUFFER_SIZE) {
+    bool publish(const String& suffix, std::function<void(JsonObject&)> populate, RetainType retain = RetainType::NoRetain, int qos = 0, int size = MQTT_BUFFER_SIZE) {
         DynamicJsonDocument doc(size);
         JsonObject root = doc.to<JsonObject>();
         populate(root);
@@ -123,7 +127,7 @@ public:
     void flush() {
         while (!publishQueue.isEmpty()) {
             const MqttMessage& message = publishQueue.pop();
-            bool success = mqttClient.publish(message.topic, message.payload, message.retain, message.qos);
+            bool success = mqttClient.publish(message.topic, message.payload, message.retain == RetainType::Retain, message.qos);
 #ifdef DUMP_MQTT
             Serial.printf("Published to '%s' (size: %d)\n", message.topic.c_str(), message.payload.length());
 #endif
@@ -267,11 +271,11 @@ private:
         MqttMessage()
             : topic("")
             , payload("")
-            , retain(false)
+            , retain(RetainType::NoRetain)
             , qos(0) {
         }
 
-        MqttMessage(const String& topic, const JsonDocument& payload, boolean retain, int qos)
+        MqttMessage(const String& topic, const JsonDocument& payload, RetainType retain, int qos)
             : topic(topic)
             , retain(retain)
             , qos(qos) {
@@ -280,7 +284,7 @@ private:
 
         String topic;
         String payload;
-        boolean retain;
+        RetainType retain;
         int qos;
     };
 
