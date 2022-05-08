@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
       - name: Build application
-        run: pio run --project-dir examples/SimpleApp
+        run: pio run --project-dir examples/SimpleApp --environment esp32 --environment esp32-s2
       - name: Package library
         run: pio package pack
   ready-to-merge:
