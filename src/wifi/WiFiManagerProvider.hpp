@@ -39,11 +39,12 @@ public:
         wm.setWiFiAutoReconnect(true);
     }
 
+    WiFiManager wm;
+
 protected:
     const seconds connectionTimeout;
     const seconds configurationTimeout;
     String hostname;
-    WiFiManager wm;
 };
 
 class BlockingWiFiManagerProvider
