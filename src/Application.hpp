@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <SPIFFS.h>
+#include <esp_system.h>
 
 #include <Configuration.hpp>
 #include <Events.hpp>
@@ -188,14 +189,32 @@ private:
         }
 
         void onWake(WakeEvent& event) override {
-            mqtt.publish("init", [&](JsonObject& json) {
-                json["type"] = deviceConfig.type.get();
-                json["instance"] = deviceConfig.instance.get();
-                json["model"] = deviceConfig.model.get();
-                json["app"] = app;
-                json["version"] = version;
-                json["wakeup"] = event.source;
-            }, MqttHandler::RetainType::Retain);
+            uint8_t rawMac[8];
+            String mac;
+            if (esp_efuse_mac_get_default(rawMac) == ESP_OK) {
+                mac = String(rawMac[0], HEX)
+                    + ":" + String(rawMac[1], HEX)
+                    + ":" + String(rawMac[2], HEX)
+                    + ":" + String(rawMac[3], HEX)
+                    + ":" + String(rawMac[4], HEX)
+                    + ":" + String(rawMac[5], HEX)
+                    + ":" + String(rawMac[6], HEX)
+                    + ":" + String(rawMac[7], HEX);
+            } else {
+                mac = "??:??:??:??:??:??:??:??";
+            }
+            mqtt.publish(
+                "init",
+                [&](JsonObject& json) {
+                    json["type"] = deviceConfig.type.get();
+                    json["instance"] = deviceConfig.instance.get();
+                    json["id"] = mac;
+                    json["model"] = deviceConfig.model.get();
+                    json["app"] = app;
+                    json["version"] = version;
+                    json["wakeup"] = event.source;
+                },
+                MqttHandler::RetainType::Retain);
         }
 
     private:
