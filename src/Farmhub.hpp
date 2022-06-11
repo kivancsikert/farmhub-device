@@ -13,11 +13,12 @@
 
 namespace farmhub { namespace client {
 
-void fatalError(String message) {
+[[ noreturn ]] void fatalError(String message)  {
     Serial.println(message);
     Serial.flush();
     delay(10000);
     ESP.restart();
+    throw "Fatal error";
 }
 
 }}    // namespace farmhub::client
