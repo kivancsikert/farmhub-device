@@ -29,49 +29,53 @@ public:
 
     const Schedule loop(const Timing& timing) override {
         switch (state) {
-            case State::UP_TO_DATE:
+            case State::CONNECTED:
+                // Reconnect every week
                 if (timing.loopStartTime - lastChecked > hours { 7 * 24 }) {
-                    state = State::NEEDS_UPDATE;
+                    state = State::DISCONNECTED;
                 }
                 break;
-            case State::NEEDS_UPDATE: {
+            case State::DISCONNECTED: {
                 if (WiFi.status() != WL_CONNECTED) {
                     Serial.println("Not updating NTP because WIFI is not available");
                     return sleepFor(seconds { 10 });
                 }
                 Serial.println("Updating time from NTP");
                 String ntpHost = fallbackServer;
-                // mdns.withService("ntp", "udp",
-                //     [&](const String& hostname, const IPAddress& address, uint16_t port) {
-                //         ntpHost = address.toString();
-                //     });
+                mdns.withService(
+                    "ntp", "udp",
+                    [&](const String& hostname, const IPAddress& address, uint16_t port) {
+                        ntpHost = address.toString();
+                    });
                 Serial.println("Connecting to NTP at " + ntpHost);
                 configTime(0, 0, ntpHost.c_str());
-                Serial.printf("SNPT enabled = %d\n", sntp_enabled());
                 updateStarted = timing.loopStartTime;
-                state = State::UPDATING;
-                return sleepFor(seconds { 1 });
+
+                Serial.println("Waiting for update... ");
+                while (true) {
+                    if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
+                        long currentTime = time(nullptr);
+                        Serial.printf("Current time is %ld\n", currentTime);
+                        lastChecked = timing.loopStartTime;
+                        state = State::CONNECTED;
+                        return sleepFor(hours { 1 });
+                        ;
+                    }
+                    if (boot_clock::now() - updateStarted > seconds { 10 }) {
+                        Serial.printf("NPT update timed out, state = %d\n", sntp_get_sync_status());
+                        state = State::DISCONNECTED;
+                        return sleepFor(seconds { 10 });
+                    }
+                    delay(100);
+                }
             }
-            case State::UPDATING:
-                if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
-                    long currentTime = time(nullptr);
-                    Serial.printf("Current time is %ld\n", currentTime);
-                    lastChecked = timing.loopStartTime;
-                    state = State::UP_TO_DATE;
-                    break;
-                }
-                if (timing.loopStartTime - updateStarted > seconds { 10 }) {
-                    Serial.printf("NPT update timed out, state = %d\n", sntp_get_sync_status());
-                    state = State::NEEDS_UPDATE;
-                }
-                return sleepFor(seconds { 1 });
         }
         // We are up-to-date, no need to check again anytime soon
         return sleepFor(hours { 1 });
     }
 
     bool isUpToDate() {
-        return state == State::UP_TO_DATE;
+        return state == State::CONNECTED;
     }
 
 private:
@@ -81,12 +85,11 @@ private:
     const String fallbackServer;
 
     enum class State {
-        NEEDS_UPDATE,
-        UPDATING,
-        UP_TO_DATE
+        DISCONNECTED,
+        CONNECTED
     };
 
-    State state = State::NEEDS_UPDATE;
+    State state = State::DISCONNECTED;
     time_point<boot_clock> updateStarted;
 };
 
