@@ -52,6 +52,7 @@ public:
                 updateStarted = timing.loopStartTime;
 
                 Serial.println("Waiting for update... ");
+                // TODO Do this asynchrnonously once https://github.com/espressif/arduino-esp32/issues/6720 is fixed
                 while (true) {
                     if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
                         long currentTime = time(nullptr);
