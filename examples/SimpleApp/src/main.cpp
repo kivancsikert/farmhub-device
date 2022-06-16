@@ -22,6 +22,7 @@ public:
     }
 
     Property<seconds> uptimeInterval { this, "uptimeInterval", seconds(10) };
+    RawJsonEntry rawJson { this, "raw" };
 };
 
 class SimpleTelemetryProvider
@@ -67,6 +68,10 @@ protected:
     void beginApp() override {
         telemetryPublisher.registerProvider(telemetry);
         ntp.begin();
+
+        Serial.printf("Raw JSON in app config: (null: %s)", appConfig.rawJson.get().isNull() ? "true" : "false");
+        serializeJson(appConfig.rawJson.get(), Serial);
+        Serial.println();
     }
 
 private:
