@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <Application.hpp>
+#include <Ntp.hpp>
 #include <Task.hpp>
 #include <Telemetry.hpp>
 #include <wifi/WiFiManagerProvider.hpp>
@@ -65,12 +66,14 @@ public:
 protected:
     void beginApp() override {
         telemetryPublisher.registerProvider(telemetry);
+        ntp.begin();
     }
 
 private:
     SimpleDeviceConfig deviceConfig;
     SimpleAppConfig appConfig;
     NonBlockingWiFiManagerProvider wifiProvider { tasks };
+    NtpHandler ntp { tasks, mdns };
     SimpleTelemetryProvider telemetry;
     SimpleUptimeTask uptimeTask { tasks, appConfig.uptimeInterval };
 
