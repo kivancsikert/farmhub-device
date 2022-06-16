@@ -163,6 +163,10 @@ public:
         load(json);
     }
 
+    void onUpdate(const std::function<void()>& callback) {
+        callbacks.push_back(callback);
+    }
+
 protected:
     void load(const JsonObject& json) override {
         ConfigurationSection::load(json);
@@ -175,15 +179,20 @@ protected:
         serializeJsonPretty(prettyJson, Serial);
         Serial.println();
 
-        onUpdate();
-    }
-
-    virtual void onUpdate() {
-        // Override if needed
+        updated();
     }
 
     const String name;
     const size_t capacity;
+
+private:
+    void updated() {
+        for (auto& callback : callbacks) {
+            callback();
+        }
+    }
+
+    std::list<std::function<void()>> callbacks;
 };
 
 class FileConfiguration : public Configuration {
