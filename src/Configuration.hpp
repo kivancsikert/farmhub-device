@@ -116,6 +116,38 @@ private:
     const T defaultValue;
 };
 
+class RawJsonEntry : public ConfigurationEntry {
+public:
+    RawJsonEntry(ConfigurationSection* parent, const String& name)
+        : name(name) {
+        parent->add(*this);
+    }
+
+    void load(const JsonObject& json) override {
+        if (json.containsKey(name)) {
+            value = json[name];
+        } else {
+            value.clear();
+        }
+    }
+
+    void store(JsonObject& json) const override {
+        json[name] = value;
+    }
+
+    void reset() override {
+        value.clear();
+    }
+
+    JsonVariant get() {
+        return value;
+    }
+
+private:
+    const String name;
+    JsonVariant value;
+};
+
 class Configuration : protected ConfigurationSection {
 public:
     Configuration(const String& name, size_t capacity = 2048)
