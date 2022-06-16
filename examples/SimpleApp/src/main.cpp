@@ -62,6 +62,9 @@ class SimpleApp : public Application {
 public:
     SimpleApp()
         : Application("SimpleApp", "UNKNOWN", deviceConfig, appConfig, wifiProvider) {
+        appConfig.onUpdate([this]() {
+            Serial.println("Updated config!");
+        });
     }
 
 protected:
