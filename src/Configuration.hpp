@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include <SPIFFS.h>
 #include <functional>
 #include <list>
 
