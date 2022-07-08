@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <Application.hpp>
+#include <Buttons.hpp>
 #include <Ntp.hpp>
 #include <Task.hpp>
 #include <Telemetry.hpp>
@@ -71,6 +72,7 @@ protected:
     void beginApp() override {
         telemetryPublisher.registerProvider(telemetry);
         ntp.begin();
+        button.begin(GPIO_NUM_0);
 
         Serial.printf("Raw JSON in app config: (null: %s)", appConfig.rawJson.get().isNull() ? "true" : "false");
         serializeJson(appConfig.rawJson.get(), Serial);
@@ -84,8 +86,10 @@ private:
     NtpHandler ntp { tasks, mdns };
     SimpleTelemetryProvider telemetry;
     SimpleUptimeTask uptimeTask { tasks, appConfig.uptimeInterval };
-
-    int iterations = 0;
+    HeldButtonListener button { tasks, "Print message", seconds { 5 },
+        []() {
+            Serial.println("BOOT button held for 5 seconds");
+        } };
 };
 
 SimpleApp app;
