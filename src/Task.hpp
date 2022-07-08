@@ -6,6 +6,7 @@
 #include <list>
 
 #include <BootClock.hpp>
+#include <Configuration.hpp>
 
 using namespace std::chrono;
 
