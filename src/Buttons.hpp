@@ -17,6 +17,8 @@ public:
 
     void begin(gpio_num_t pin, uint8_t mode = INPUT_PULLUP) {
         this->pin = pin;
+        Serial.printf("Initializing button \"%s\" on pin %d with mode = %d, trigger after %f sec\n",
+            name.c_str(), pin, mode, triggerDelay.count() / 1000000.0);
         pinMode(pin, mode);
     }
 
