@@ -25,13 +25,9 @@ public:
 
     void begin() {
         sntp_set_time_sync_notification_cb(ntpUpdated);
-        begun = true;
     }
 
     const Schedule loop(const Timing& timing) override {
-        if (!begun) {
-            return sleepFor(seconds { 1 });
-        }
         switch (state) {
             case State::CONNECTED:
                 // Reconnect every week
@@ -94,7 +90,6 @@ private:
         CONNECTED
     };
 
-    bool begun = false;
     State state = State::DISCONNECTED;
     time_point<boot_clock> updateStarted;
 };
