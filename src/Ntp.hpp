@@ -41,7 +41,7 @@ public:
                     return sleepFor(seconds { 10 });
                 }
                 Serial.println("Updating time from NTP");
-                String ntpHost = fallbackServer;
+                ntpHost = fallbackServer;
                 mdns.withService(
                     "ntp", "udp",
                     [&](const String& hostname, const IPAddress& address, uint16_t port) {
@@ -50,25 +50,23 @@ public:
                 Serial.println("Connecting to NTP at " + ntpHost);
                 configTime(0, 0, ntpHost.c_str());
                 updateStarted = timing.loopStartTime;
-
-                // TODO Do this asynchrnonously once https://github.com/espressif/arduino-esp32/issues/6720 is fixed
-                while (true) {
-                    if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
-                        long currentTime = time(nullptr);
-                        Serial.printf("Current time is %ld\n", currentTime);
-                        lastChecked = timing.loopStartTime;
-                        state = State::CONNECTED;
-                        return sleepFor(hours { 1 });
-                        ;
-                    }
-                    if (boot_clock::now() - updateStarted > seconds { 10 }) {
-                        Serial.printf("NPT update timed out, state = %d\n", sntp_get_sync_status());
-                        state = State::DISCONNECTED;
-                        return sleepFor(seconds { 10 });
-                    }
-                    delay(100);
-                }
+                state = State::CONNECTING;
+                break;
             }
+            case State::CONNECTING:
+                if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
+                    long currentTime = time(nullptr);
+                    Serial.printf("Current time is %ld\n", currentTime);
+                    lastChecked = timing.loopStartTime;
+                    state = State::CONNECTED;
+                    return sleepFor(hours { 1 });
+                }
+                if (boot_clock::now() - updateStarted > seconds { 10 }) {
+                    Serial.printf("NPT update timed out, state = %d\n", sntp_get_sync_status());
+                    state = State::DISCONNECTED;
+                    return sleepFor(seconds { 10 });
+                }
+                return sleepFor(seconds { 1 });
         }
         // We are up-to-date, no need to check again anytime soon
         return sleepFor(hours { 1 });
@@ -83,9 +81,12 @@ private:
     MdnsHandler& mdns;
 
     const String fallbackServer;
+    // Need to retain server name because of https://github.com/espressif/arduino-esp32/issues/6720
+    String ntpHost;
 
     enum class State {
         DISCONNECTED,
+        CONNECTING,
         CONNECTED
     };
 
