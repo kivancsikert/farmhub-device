@@ -45,7 +45,7 @@ public:
                     return sleepFor(seconds { 10 });
                 }
                 Serial.println("Updating time from NTP");
-                String ntpHost = fallbackServer;
+                ntpHost = fallbackServer;
                 mdns.withService(
                     "ntp", "udp",
                     [&](const String& hostname, const IPAddress& address, uint16_t port) {
@@ -85,6 +85,8 @@ private:
     MdnsHandler& mdns;
 
     const String fallbackServer;
+    // Need to retain server name because of https://github.com/espressif/arduino-esp32/issues/6720
+    String ntpHost;
 
     enum class State {
         DISCONNECTED,
