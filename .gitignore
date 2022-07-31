@@ -4,6 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 *.code-workspace
+!farmhub-client.code-workspace
 
 # Packaged library
 *.tar.gz
