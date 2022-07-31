@@ -15,20 +15,20 @@ public:
 
     void handle(const JsonObject& request, JsonObject& response) override {
         if (!request.containsKey("url")) {
-            Serial.println("Command contains no URL");
+            response["failure"] = "Command contains no URL";
             return;
         }
         String url = request["url"];
         if (url.length() == 0) {
-            Serial.println("Command contains empty url");
+            response["failure"] = "Command contains empty url";
             return;
         }
         httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-        update(url, currentVersion);
+        response["failure"] = update(url, currentVersion);
     }
 
 private:
-    static void update(const String& url, const String& currentVersion) {
+    static String update(const String& url, const String& currentVersion) {
         Serial.printf("Updating from version %s via URL %s\n", currentVersion.c_str(), url.c_str());
         WiFiClientSecure client;
         // Allow insecure connections for testing
@@ -36,17 +36,13 @@ private:
         HTTPUpdateResult result = httpUpdate.update(client, url, currentVersion);
         switch (result) {
             case HTTP_UPDATE_FAILED:
-                Serial.println(httpUpdate.getLastErrorString());
-                break;
+                return httpUpdate.getLastErrorString() + " (" + String(httpUpdate.getLastError()) + ")";
             case HTTP_UPDATE_NO_UPDATES:
-                Serial.println("No updates available");
-                break;
+                return "No updates available";
             case HTTP_UPDATE_OK:
-                Serial.println("Update OK");
-                break;
+                return "Update OK";
             default:
-                Serial.println("Unknown response");
-                break;
+                return "Unknown response";
         }
     }
 
