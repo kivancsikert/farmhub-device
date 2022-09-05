@@ -23,13 +23,6 @@ public:
     virtual bool getLedEnabledState() = 0;
 
     virtual gpio_num_t getFlowMeterPin() = 0;
-
-    /**
-     * @brief The Q factor for the flow meter.
-     */
-    double getFlowMeterQFactor() {
-        return 5.0f;
-    }
 };
 
 class FlowControlAppConfig : public Application::AppConfiguration {
@@ -103,7 +96,7 @@ protected:
         ntp.begin();
 
         led.begin(deviceConfig.getLedPin(), deviceConfig.getLedEnabledState());
-        flowMeter.begin(deviceConfig.getFlowMeterPin(), deviceConfig.getFlowMeterQFactor());
+        flowMeter.begin(deviceConfig.getFlowMeterPin());
 
         beginPeripherials();
 
