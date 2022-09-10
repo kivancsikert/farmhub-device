@@ -21,6 +21,7 @@ public:
             : NamedConfigurationSection(parent, "meter") {
         }
 
+        Property<double> qFactor { this, "qFactor", 5.0 };
         Property<seconds> measurementFrequency { this, "measurementFrequency", seconds { 1 } };
         Property<seconds> noFlowTimeout { this, "noFlowTimeout", minutes { 10 } };
     };
@@ -33,10 +34,9 @@ public:
         , onSleep(onSleep) {
     }
 
-    void begin(gpio_num_t flowPin, double qFactor) {
+    void begin(gpio_num_t flowPin) {
         this->flowPin = flowPin;
-        this->qFactor = qFactor;
-        Serial.printf("Initializing flow meter on pin %d with Q = %f\n", flowPin, qFactor);
+        Serial.printf("Initializing flow meter on pin %d with Q = %f\n", flowPin, config.qFactor.get());
 
         pinMode(flowPin, INPUT);
 
@@ -85,7 +85,7 @@ protected:
                 }
             }
         } else {
-            double currentVolume = pulses / qFactor / 60.0f;
+            double currentVolume = pulses / config.qFactor.get() / 60.0f;
             Serial.printf("Counted %d pulses, %.2f l/min, %.2f l\n",
                 pulses, currentVolume / (elapsed.count() / 1000.0f / 60.0f), currentVolume);
             volume += currentVolume;
@@ -115,7 +115,6 @@ private:
     const Config& config;
     std::function<void()> onSleep;
     gpio_num_t flowPin;
-    double qFactor;
 
     time_point<boot_clock> lastMeasurement;
     time_point<boot_clock> lastSeenFlow;
