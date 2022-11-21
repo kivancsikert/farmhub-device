@@ -119,7 +119,7 @@ private:
     MeterHandler flowMeter { tasks, sleep, config.meter, std::bind(&AbstractFlowControlApp::onSleep, this) };
 
 protected:
-    BlockingWiFiManagerProvider wifiProvider;
+    NonBlockingWiFiManagerProvider wifiProvider { tasks };
     LedHandler led { sleep };
     ValveHandler valve;
 };
