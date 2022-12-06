@@ -213,8 +213,7 @@ private:
                     json["app"] = app;
                     json["version"] = version;
                     json["wakeup"] = event.source;
-                },
-                MqttHandler::RetainType::Retain);
+                });
         }
 
     private:
