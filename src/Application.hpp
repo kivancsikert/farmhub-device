@@ -40,7 +40,7 @@ public:
             : FileConfiguration("device", path, capacity)
             , type(this, "type", defaultType)
             , model(this, "model", defaultModel)
-            , instance(this, "instance", resolveMacAddress()) {
+            , instance(this, "instance", getMacAddress()) {
         }
 
         Property<String> type;
@@ -179,19 +179,24 @@ private:
         }
     }
 
-    static String resolveMacAddress() {
-        uint8_t rawMac[8];
-        for (int i = 0; i < 8; i++) {
-            rawMac[i] = 0;
+    static const String& getMacAddress() {
+        static String macAddress;
+        if (macAddress.length() == 0) {
+            uint8_t rawMac[8];
+            for (int i = 0; i < 8; i++) {
+                rawMac[i] = 0;
+            }
+            if (esp_efuse_mac_get_default(rawMac) != ESP_OK) {
+                macAddress = "??:??:??:??:??:??:??:??";
+            } else {
+                char mac[24];
+                sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+                    rawMac[0], rawMac[1], rawMac[2], rawMac[3],
+                    rawMac[4], rawMac[5], rawMac[6], rawMac[7]);
+                macAddress = mac;
+            }
         }
-        if (esp_efuse_mac_get_default(rawMac) != ESP_OK) {
-            return "??:??:??:??:??:??:??:??";
-        }
-        char mac[24];
-        sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-            rawMac[0], rawMac[1], rawMac[2], rawMac[3],
-            rawMac[4], rawMac[5], rawMac[6], rawMac[7]);
-        return String(mac);
+        return macAddress;
     }
 
     class ReportWakeUpHandler : BaseSleepListener {
@@ -211,6 +216,7 @@ private:
                     json["type"] = deviceConfig.type.get();
                     json["model"] = deviceConfig.model.get();
                     json["instance"] = deviceConfig.instance.get();
+                    json["mac"] = getMacAddress();
                     json["app"] = app;
                     json["version"] = version;
                     json["wakeup"] = event.source;
