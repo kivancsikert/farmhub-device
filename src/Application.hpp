@@ -35,19 +35,17 @@ public:
         DeviceConfiguration(
             const String& defaultType,
             const String& defaultModel,
-            const String& defaultInstance = "default",
             const String& path = "/device-config.json",
             size_t capacity = 2048)
             : FileConfiguration("device", path, capacity)
             , type(this, "type", defaultType)
             , model(this, "model", defaultModel)
-            , instance(this, "instance", defaultInstance) {
+            , instance(this, "instance", resolveMacAddress()) {
         }
 
         Property<String> type;
         Property<String> model;
         Property<String> instance;
-        Property<String> description { this, "description", "" };
 
         MqttHandler::Config mqtt { this, "mqtt" };
 
@@ -56,7 +54,10 @@ public:
         }
 
         virtual const String getHostname() {
-            return type.get() + "-" + instance.get();
+            String hostname = instance.get();
+            hostname.replace(":", "-");
+            hostname.replace("?", "");
+            return type.get() + "-" + hostname;
         }
     };
 
@@ -118,9 +119,9 @@ private:
 
         const String& hostname = deviceConfig.getHostname();
 
-        Serial.printf("Running on %s %s instance '%s' with hostname '%s', MAC address %s\n",
+        Serial.printf("Running on %s %s instance '%s' with hostname '%s'\n",
             deviceConfig.type.get().c_str(), deviceConfig.model.get().c_str(),
-            deviceConfig.instance.get().c_str(), hostname.c_str(), WiFi.macAddress().c_str());
+            deviceConfig.instance.get().c_str(), hostname.c_str());
 
         if (deviceConfig.isResetButtonPressed()) {
             Serial.println("Reset button pressed, skipping application configuration");
@@ -178,6 +179,21 @@ private:
         }
     }
 
+    static String resolveMacAddress() {
+        uint8_t rawMac[8];
+        for (int i = 0; i < 8; i++) {
+            rawMac[i] = 0;
+        }
+        if (esp_efuse_mac_get_default(rawMac) != ESP_OK) {
+            return "??:??:??:??:??:??:??:??";
+        }
+        char mac[24];
+        sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+            rawMac[0], rawMac[1], rawMac[2], rawMac[3],
+            rawMac[4], rawMac[5], rawMac[6], rawMac[7]);
+        return String(mac);
+    }
+
     class ReportWakeUpHandler : BaseSleepListener {
     public:
         ReportWakeUpHandler(SleepHandler& sleep, MqttHandler& mqtt, const String& app, const String& version, const DeviceConfiguration& deviceConfig)
@@ -189,27 +205,12 @@ private:
         }
 
         void onWake(WakeEvent& event) override {
-            uint8_t rawMac[8];
-            String mac;
-            if (esp_efuse_mac_get_default(rawMac) == ESP_OK) {
-                mac = String(rawMac[0], HEX)
-                    + ":" + String(rawMac[1], HEX)
-                    + ":" + String(rawMac[2], HEX)
-                    + ":" + String(rawMac[3], HEX)
-                    + ":" + String(rawMac[4], HEX)
-                    + ":" + String(rawMac[5], HEX)
-                    + ":" + String(rawMac[6], HEX)
-                    + ":" + String(rawMac[7], HEX);
-            } else {
-                mac = "??:??:??:??:??:??:??:??";
-            }
             mqtt.publish(
                 "init",
                 [&](JsonObject& json) {
                     json["type"] = deviceConfig.type.get();
-                    json["instance"] = deviceConfig.instance.get();
-                    json["id"] = mac;
                     json["model"] = deviceConfig.model.get();
+                    json["instance"] = deviceConfig.instance.get();
                     json["app"] = app;
                     json["version"] = version;
                     json["wakeup"] = event.source;
