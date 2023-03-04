@@ -111,10 +111,10 @@ private:
         beginFileSystem();
         deviceConfig.begin();
         if (deviceConfig.mqtt.clientId.get().isEmpty()) {
-            deviceConfig.mqtt.clientId.set(deviceConfig.type.get() + "-" + deviceConfig.instance.get());
+            deviceConfig.mqtt.clientId.set(name + "-" + deviceConfig.instance.get());
         }
         if (deviceConfig.mqtt.topic.get().isEmpty()) {
-            deviceConfig.mqtt.topic.set("devices/" + deviceConfig.type.get() + "/" + deviceConfig.instance.get());
+            deviceConfig.mqtt.topic.set("devices/" + name + "/" + deviceConfig.instance.get());
         }
 
         const String& hostname = deviceConfig.getHostname();
