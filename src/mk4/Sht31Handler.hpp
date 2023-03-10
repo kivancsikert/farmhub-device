@@ -8,16 +8,16 @@
 
 using namespace farmhub::client;
 
-class ShtHandler
+class Sht31Handler
     : public AbstractEnvironmentHandler {
 
     const int SHT31_ADDRESS = 0x44;
 
 public:
-    ShtHandler() = default;
+    Sht31Handler() = default;
 
     void begin() {
-        Serial.print("Initializing SHT sensor\n");
+        Serial.print("Initializing SHT31 sensor\n");
         Wire.begin();
 
         if (sht.begin()) {

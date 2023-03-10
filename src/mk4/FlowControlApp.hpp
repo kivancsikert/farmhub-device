@@ -5,7 +5,7 @@
 #include "../AbstractFlowControlApp.hpp"
 #include "../Ds18B20SoilSensorHandler.hpp"
 #include "Drv8801ValveController.hpp"
-#include "ShtHandler.hpp"
+#include "Sht31Handler.hpp"
 
 using namespace farmhub::client;
 
@@ -55,7 +55,7 @@ public:
 
 private:
     FlowControlDeviceConfig deviceConfig;
-    ShtHandler environment;
+    Sht31Handler environment;
     Ds18B20SoilSensorHandler soilSensor;
     Drv8801ValveController valveController { deviceConfig.valve };
     HeldButtonListener resetWifi { tasks, "Reset WIFI", seconds { 5 },
