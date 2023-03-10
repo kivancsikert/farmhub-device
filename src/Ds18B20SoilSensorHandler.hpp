@@ -3,15 +3,15 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
-#include "../AbstractEnvironmentHandler.hpp"
+#include "AbstractEnvironmentHandler.hpp"
 
 using namespace farmhub::client;
 
-class SoilSensorHandler
+class Ds18B20SoilSensorHandler
     : public AbstractEnvironmentHandler {
 
 public:
-    SoilSensorHandler() = default;
+    Ds18B20SoilSensorHandler() = default;
 
     void begin(gpio_num_t temperaturePin, gpio_num_t moisturePin) {
         Serial.printf("Initializing DS18B20 soil temperature sensor on pin %d\n", temperaturePin);
