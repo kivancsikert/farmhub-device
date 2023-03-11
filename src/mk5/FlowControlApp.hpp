@@ -4,6 +4,7 @@
 
 #include "../AbstractFlowControlApp.hpp"
 #include "../Ds18B20SoilSensorHandler.hpp"
+#include "BatteryHandler.hpp"
 #include "Drv8874ValveController.hpp"
 #include "ShtC3Handler.hpp"
 
@@ -34,12 +35,14 @@ class FlowControlApp : public AbstractFlowControlApp {
 public:
     FlowControlApp()
         : AbstractFlowControlApp(deviceConfig, valveController) {
+        telemetryPublisher.registerProvider(battery);
         telemetryPublisher.registerProvider(environment);
         telemetryPublisher.registerProvider(soilSensor);
     }
 
     void beginPeripherials() override {
         resetWifi.begin(GPIO_NUM_0, INPUT_PULLUP);
+        battery.begin(GPIO_NUM_1);
         environment.begin();
         soilSensor.begin(GPIO_NUM_7, GPIO_NUM_6);
         valveController.begin(
@@ -47,12 +50,13 @@ public:
             GPIO_NUM_17,    // IN2
             GPIO_NUM_11,    // Fault
             GPIO_NUM_10,    // Sleep
-            GPIO_NUM_4     // Current
+            GPIO_NUM_4      // Current
         );
     }
 
 private:
     FlowControlDeviceConfig deviceConfig;
+    BattertHandler battery;
     ShtC3Handler environment;
     Ds18B20SoilSensorHandler soilSensor;
     Drv8874ValveController valveController { deviceConfig.valve };
