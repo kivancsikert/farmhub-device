@@ -45,7 +45,8 @@
     "maximum_ram_size": 327680,
     "maximum_size": 16777216,
     "require_upload_port": true,
-    "speed": 921600
+    "wait_for_upload_port": true,
+    "speed": 1500000
   },
   "url": "https://eu.mouser.com/datasheet/2/891/esp32_s3_wroom_1_wroom_1u_datasheet_en-2930317.pdf",
   "vendor": "Espressif"
