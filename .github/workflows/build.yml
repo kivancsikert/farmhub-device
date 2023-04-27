@@ -11,23 +11,23 @@ jobs:
             matrix:
                 environment: [mk3, mk4, native]
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
               with:
                   fetch-depth: 0
             - name: Cache pip
-              uses: actions/cache@v2
+              uses: actions/cache@v3
               with:
                   path: ~/.cache/pip
                   key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
                   restore-keys: |
                       ${{ runner.os }}-pip-
             - name: Cache PlatformIO
-              uses: actions/cache@v2
+              uses: actions/cache@v3
               with:
                   path: ~/.platformio
                   key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
             - name: Set up Python
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v3
             - name: Install PlatformIO
               run: |
                   python -m pip install --upgrade pip
@@ -40,7 +40,7 @@ jobs:
               run: cp ${{ github.workspace }}/.pio/build/${{ matrix.environment }}/firmware.bin firmware-${{ matrix.environment }}.bin
             - name: Upload firmware artifact
               if: matrix.environment != 'native'
-              uses: "actions/upload-artifact@v2"
+              uses: "actions/upload-artifact@v3"
               with:
                   path: firmware-${{ matrix.environment }}.bin
                   if-no-files-found: error
@@ -58,7 +58,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download artifacts
-              uses: actions/download-artifact@v2
+              uses: actions/download-artifact@v3
             - name: Display structure of downloaded files
               run: ls -R
             - name: Release
