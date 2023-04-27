@@ -70,7 +70,7 @@ class FlowControlApp : public AbstractFlowControlApp {
 public:
     FlowControlApp()
         : AbstractFlowControlApp(deviceConfig, valveController) {
-        telemetryPublisher.registerProvider(environment);
+        telemetryPublisher.registerProvider(builtInEnvironment);
         telemetryPublisher.registerProvider(valve);
         telemetryPublisher.registerProvider(mode);
     }
@@ -85,13 +85,13 @@ public:
         }
 
         if (deviceConfig.isEnvironmentSensorPresent()) {
-            environment.begin(DHT_PIN, deviceConfig.getDhtType());
+            builtInEnvironment.begin(DHT_PIN, deviceConfig.getDhtType());
         }
     }
 
 private:
     FlowControlDeviceConfig deviceConfig;
-    DhtHandler environment;
+    DhtHandler builtInEnvironment;
     RelayValveController valveController { deviceConfig.getValvePulseDuration() };
     ModeHandler mode { tasks, sleep, valve };
 };

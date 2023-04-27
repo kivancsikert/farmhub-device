@@ -34,13 +34,13 @@ class FlowControlApp : public AbstractFlowControlApp {
 public:
     FlowControlApp()
         : AbstractFlowControlApp(deviceConfig, valveController) {
-        telemetryPublisher.registerProvider(environment);
+        telemetryPublisher.registerProvider(builtInEnvironment);
         telemetryPublisher.registerProvider(soilSensor);
     }
 
     void beginPeripherials() override {
         resetWifi.begin(GPIO_NUM_0, INPUT_PULLUP);
-        environment.begin();
+        builtInEnvironment.begin();
         soilSensor.begin(GPIO_NUM_7, GPIO_NUM_6);
         valveController.begin(
             GPIO_NUM_10,    // Enable
@@ -55,7 +55,7 @@ public:
 
 private:
     FlowControlDeviceConfig deviceConfig;
-    Sht31Handler environment;
+    Sht31Handler builtInEnvironment;
     Ds18B20SoilSensorHandler soilSensor;
     Drv8801ValveController valveController { deviceConfig.valve };
     HeldButtonListener resetWifi { tasks, "Reset WIFI", seconds { 5 },

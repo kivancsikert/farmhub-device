@@ -29,22 +29,30 @@ public:
     }
 
     Drv8874ValveController::Config valve { this };
+    Property<bool> builtInEnvironmentSensor { this, "builtInEnvironmentSensor", false };
 };
 
 class FlowControlApp : public AbstractFlowControlApp {
 public:
     FlowControlApp()
         : AbstractFlowControlApp(deviceConfig, valveController) {
-        telemetryPublisher.registerProvider(battery);
-        telemetryPublisher.registerProvider(environment);
-        telemetryPublisher.registerProvider(soilSensor);
     }
 
     void beginPeripherials() override {
         resetWifi.begin(GPIO_NUM_0, INPUT_PULLUP);
+
+        telemetryPublisher.registerProvider(battery);
         battery.begin(GPIO_NUM_1);
-        environment.begin();
+        if (deviceConfig.builtInEnvironmentSensor.get()) {
+            telemetryPublisher.registerProvider(builtInEnvironment);
+            builtInEnvironment.begin();
+        } else {
+            Serial.println("Built-in environment sensor is disabled");
+        }
+
         soilSensor.begin(GPIO_NUM_7, GPIO_NUM_6);
+        telemetryPublisher.registerProvider(soilSensor);
+
         valveController.begin(
             GPIO_NUM_16,    // IN1
             GPIO_NUM_17,    // IN2
@@ -57,7 +65,7 @@ public:
 private:
     FlowControlDeviceConfig deviceConfig;
     BattertHandler battery;
-    ShtC3Handler environment;
+    ShtC3Handler builtInEnvironment;
     Ds18B20SoilSensorHandler soilSensor;
     Drv8874ValveController valveController { deviceConfig.valve };
     HeldButtonListener resetWifi { tasks, "Reset WIFI", seconds { 5 },
