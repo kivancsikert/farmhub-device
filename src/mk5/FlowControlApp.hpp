@@ -4,19 +4,20 @@
 
 #include "../AbstractFlowControlApp.hpp"
 #include "../Ds18B20SoilSensorHandler.hpp"
-#include "Drv8801ValveController.hpp"
-#include "Sht31Handler.hpp"
+#include "BatteryHandler.hpp"
+#include "Drv8874ValveController.hpp"
+#include "ShtC3Handler.hpp"
 
 using namespace farmhub::client;
 
 class FlowControlDeviceConfig : public AbstractFlowControlDeviceConfig {
 public:
     FlowControlDeviceConfig()
-        : AbstractFlowControlDeviceConfig("mk4") {
+        : AbstractFlowControlDeviceConfig("mk5") {
     }
 
     gpio_num_t getLedPin() override {
-        return GPIO_NUM_26;
+        return GPIO_NUM_2;
     }
 
     bool getLedEnabledState() override {
@@ -24,40 +25,49 @@ public:
     }
 
     gpio_num_t getFlowMeterPin() override {
-        return GPIO_NUM_17;
+        return GPIO_NUM_5;
     }
 
-    Drv8801ValveController::Config valve { this };
+    Drv8874ValveController::Config valve { this };
+    Property<bool> builtInEnvironmentSensor { this, "builtInEnvironmentSensor", false };
 };
 
 class FlowControlApp : public AbstractFlowControlApp {
 public:
     FlowControlApp()
         : AbstractFlowControlApp(deviceConfig, valveController) {
-        telemetryPublisher.registerProvider(builtInEnvironment);
-        telemetryPublisher.registerProvider(soilSensor);
     }
 
     void beginPeripherials() override {
         resetWifi.begin(GPIO_NUM_0, INPUT_PULLUP);
-        builtInEnvironment.begin();
+
+        telemetryPublisher.registerProvider(battery);
+        battery.begin(GPIO_NUM_1);
+        if (deviceConfig.builtInEnvironmentSensor.get()) {
+            telemetryPublisher.registerProvider(builtInEnvironment);
+            builtInEnvironment.begin();
+        } else {
+            Serial.println("Built-in environment sensor is disabled");
+        }
+
         soilSensor.begin(GPIO_NUM_7, GPIO_NUM_6);
+        telemetryPublisher.registerProvider(soilSensor);
+
         valveController.begin(
-            GPIO_NUM_10,    // Enable
-            GPIO_NUM_11,    // Phase
-            GPIO_NUM_12,    // Fault
-            GPIO_NUM_13,    // Sleep
-            GPIO_NUM_14,    // Mode1
-            GPIO_NUM_15,    // Mode2
-            GPIO_NUM_16     // Current
+            GPIO_NUM_16,    // IN1
+            GPIO_NUM_17,    // IN2
+            GPIO_NUM_11,    // Fault
+            GPIO_NUM_10,    // Sleep
+            GPIO_NUM_4      // Current
         );
     }
 
 private:
     FlowControlDeviceConfig deviceConfig;
-    Sht31Handler builtInEnvironment;
+    BattertHandler battery;
+    ShtC3Handler builtInEnvironment;
     Ds18B20SoilSensorHandler soilSensor;
-    Drv8801ValveController valveController { deviceConfig.valve };
+    Drv8874ValveController valveController { deviceConfig.valve };
     HeldButtonListener resetWifi { tasks, "Reset WIFI", seconds { 5 },
         [&]() {
             Serial.println("Resetting WIFI settings");
