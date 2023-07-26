@@ -99,11 +99,10 @@ private:
 template <typename T>
 class Property : public ConfigurationEntry {
 public:
-    Property(ConfigurationSection* parent, const String& name, const T& value, const bool secret = false)
+    Property(ConfigurationSection* parent, const String& name, const T& defaultValue, const bool secret = false)
         : name(name)
         , secret(secret)
-        , value(value)
-        , defaultValue(value) {
+        , defaultValue(defaultValue) {
         parent->add(*this);
     }
 
@@ -118,7 +117,9 @@ public:
 
     void load(const JsonObject& json) override {
         if (json.containsKey(name)) {
-            value = json[name].as<T>();
+            set(json[name].as<T>());
+        } else {
+            reset();
         }
     }
 
