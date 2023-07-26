@@ -109,13 +109,6 @@ private:
             name.c_str(), version.c_str());
 
         beginFileSystem();
-        deviceConfig.begin();
-        if (deviceConfig.mqtt.clientId.get().isEmpty()) {
-            deviceConfig.mqtt.clientId.set(name + "-" + deviceConfig.instance.get());
-        }
-        if (deviceConfig.mqtt.topic.get().isEmpty()) {
-            deviceConfig.mqtt.topic.set("devices/" + name + "/" + deviceConfig.instance.get());
-        }
 
         const String& hostname = deviceConfig.getHostname();
 
@@ -153,7 +146,16 @@ private:
 
         otaHandler.begin(hostname);
 
-        mqtt.begin();
+        deviceConfig.begin();
+        String mqttClientId = deviceConfig.mqtt.clientId.get();
+        if (mqttClientId.isEmpty()) {
+            mqttClientId = name + "-" + deviceConfig.instance.get();
+        }
+        String mqttTopic = deviceConfig.mqtt.topic.get();
+        if (mqttTopic.isEmpty()) {
+            mqttTopic = "devices/" + name + "/" + deviceConfig.instance.get();
+        }
+        mqtt.begin(deviceConfig.mqtt.host.get(), deviceConfig.mqtt.port.get(), mqttClientId, mqttTopic);
 
         beginApp();
 
@@ -217,6 +219,8 @@ private:
                     json["model"] = deviceConfig.model.get();
                     json["instance"] = deviceConfig.instance.get();
                     json["mac"] = getMacAddress();
+                    auto device = json.createNestedObject("deviceConfig");
+                    deviceConfig.store(device, false);
                     json["app"] = app;
                     json["version"] = version;
                     json["wakeup"] = event.source;
@@ -245,7 +249,7 @@ public:
     TaskContainer tasks;
     MdnsHandler mdns;
     SleepHandler sleep;
-    MqttHandler mqtt { tasks, mdns, sleep, deviceConfig.mqtt, appConfig };
+    MqttHandler mqtt { tasks, mdns, sleep, appConfig };
     TelemetryPublisher telemetryPublisher { tasks, mqtt, appConfig.heartbeat };
     EventHandler events { mqtt, telemetryPublisher };
 
