@@ -36,6 +36,10 @@ protected:
         reset();
     }
 
+    ValveState getDefaultState() override {
+        return ValveState::NONE;
+    }
+
     void reset() override {
         digitalWrite(openPin, HIGH);
         digitalWrite(closePin, HIGH);

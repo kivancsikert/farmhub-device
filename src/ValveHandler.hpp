@@ -12,11 +12,18 @@ using namespace farmhub::client;
 RTC_DATA_ATTR
 int8_t valveHandlerStoredState;
 
+enum class ValveState {
+    CLOSED = -1,
+    NONE = 0,
+    OPEN = 1
+};
+
 class ValveController {
 public:
     virtual void open() = 0;
     virtual void close() = 0;
     virtual void reset() = 0;
+    virtual ValveState getDefaultState() = 0;
 };
 
 /**
@@ -30,19 +37,13 @@ class ValveHandler
     : public TelemetryProvider,
       public BaseTask {
 public:
-    enum class State {
-        CLOSED = -1,
-        NONE = 0,
-        OPEN = 1
-    };
-
     ValveHandler(TaskContainer& tasks, MqttHandler& mqtt, EventHandler& events, ValveController& controller)
         : BaseTask(tasks, "ValveHandler")
         , events(events)
         , controller(controller) {
         mqtt.registerCommand("override", [&](const JsonObject& request, JsonObject& response) {
-            State targetState = request["state"].as<State>();
-            if (targetState == State::NONE) {
+            ValveState targetState = request["state"].as<ValveState>();
+            if (targetState == ValveState::NONE) {
                 resume();
             } else {
                 seconds duration = request.containsKey("duration")
@@ -74,12 +75,13 @@ public:
 
         // RTC memory is reset to 0 upon power-up
         if (valveHandlerStoredState == 0) {
-            Serial.println("Initializing for the first time");
+            Serial.println("Initializing for the first time to default state");
+            setState(controller.getDefaultState());
         } else {
             Serial.println("Initializing after waking from sleep with state = " + String(valveHandlerStoredState));
             state = valveHandlerStoredState == 1
-                ? State::OPEN
-                : State::CLOSED;
+                ? ValveState::OPEN
+                : ValveState::CLOSED;
         }
         enabled = true;
     }
@@ -99,7 +101,7 @@ public:
         }
     }
 
-    void override(State state, seconds duration) {
+    void override(ValveState state, seconds duration) {
         Serial.printf("Overriding valve to %d for %d seconds\n", static_cast<int>(state), duration.count());
         manualOverrideEnd = system_clock::now() + duration;
         setState(state);
@@ -108,49 +110,52 @@ public:
     void resume() {
         Serial.println("Normal valve operation resumed");
         manualOverrideEnd = time_point<system_clock>();
+        auto defaultState = controller.getDefaultState();
     }
 
 protected:
     const Schedule loop(const Timing& timing) override {
-        if (!enabled || schedules.empty()) {
+        if (!enabled) {
             return sleepIndefinitely();
         }
 
-        if (manualOverrideEnd < system_clock::now()) {
-            if (manualOverrideEnd != time_point<system_clock>()) {
-                resume();
-            }
+        auto now = system_clock::now();
+        auto targetState = state;
 
-            auto targetState = scheduler.isScheduled(schedules, system_clock::now())
-                ? State::OPEN
-                : State::CLOSED;
-
-            if (state != targetState) {
-                switch (targetState) {
-                    case State::OPEN:
-                        Serial.println("Opening on schedule");
-                        break;
-                    case State::CLOSED:
-                        Serial.println("Closing on schedule");
-                        break;
-                }
-                setState(targetState);
+        if (manualOverrideEnd != time_point<system_clock>()) {
+            if (manualOverrideEnd >= now) {
+                Serial.println("Manual override active");
+                return sleepFor(seconds { 1 });
             }
+            Serial.println("Manual override expired");
+            resume();
+            targetState = controller.getDefaultState();
+        }
+
+        if (!schedules.empty()) {
+            targetState = scheduler.isScheduled(schedules, now)
+                ? ValveState::OPEN
+                : ValveState::CLOSED;
+        }
+
+        if (state != targetState) {
+            Serial.println("Changing state");
+            setState(targetState);
         }
 
         return sleepFor(seconds { 1 });
     }
 
 private:
-    void setState(State state) {
+    void setState(ValveState state) {
         this->state = state;
         switch (state) {
-            case State::OPEN:
+            case ValveState::OPEN:
                 Serial.println("Opening");
                 valveHandlerStoredState = 1;
                 controller.open();
                 break;
-            case State::CLOSED:
+            case ValveState::CLOSED:
                 Serial.println("Closing");
                 valveHandlerStoredState = -1;
                 controller.close();
@@ -165,15 +170,15 @@ private:
     EventHandler& events;
     ValveController& controller;
 
-    State state = State::NONE;
+    ValveState state = ValveState::NONE;
     time_point<system_clock> manualOverrideEnd;
     bool enabled = false;
     std::list<ValveSchedule> schedules;
 };
 
-bool convertToJson(const ValveHandler::State& src, JsonVariant dst) {
+bool convertToJson(const ValveState& src, JsonVariant dst) {
     return dst.set(static_cast<int>(src));
 }
-void convertFromJson(JsonVariantConst src, ValveHandler::State& dst) {
-    dst = static_cast<ValveHandler::State>(src.as<int>());
+void convertFromJson(JsonVariantConst src, ValveState& dst) {
+    dst = static_cast<ValveState>(src.as<int>());
 }

@@ -17,6 +17,8 @@ class ValveControlStrategy {
 public:
     virtual void open() = 0;
     virtual void close() = 0;
+    virtual ValveState getDefaultState() = 0;
+
     virtual String describe() = 0;
 };
 
@@ -75,9 +77,15 @@ public:
         void open() override {
             driveAndHold(HIGH);
         }
+
         void close() override {
             controller.stop();
         }
+
+        ValveState getDefaultState() override {
+            return ValveState::CLOSED;
+        }
+
         String describe() override {
             return "normally closed with switch duration " + String((int) switchDuration.count()) + "ms and hold duty " + String(holdDuty * 100) + "%";
         }
@@ -93,9 +101,15 @@ public:
         void open() override {
             controller.stop();
         }
+
         void close() override {
             driveAndHold(LOW);
         }
+
+        ValveState getDefaultState() override {
+            return ValveState::OPEN;
+        }
+
         String describe() override {
             return "normally open with switch duration " + String((int) switchDuration.count()) + "ms and hold duty " + String(holdDuty * 100) + "%";
         }
@@ -114,11 +128,17 @@ public:
             delay(switchDuration.count());
             controller.stop();
         }
+
         void close() override {
             controller.drive(LOW, 1.0);
             delay(switchDuration.count());
             controller.stop();
         }
+
+        ValveState getDefaultState() override {
+            return ValveState::NONE;
+        }
+
         String describe() override {
             return "latching with switch duration " + String((int) switchDuration.count()) + "ms";
         }
@@ -170,6 +190,10 @@ public:
 
     void close() override {
         strategy->close();
+    }
+
+    ValveState getDefaultState() override {
+        return strategy->getDefaultState();
     }
 
     void reset() override {
