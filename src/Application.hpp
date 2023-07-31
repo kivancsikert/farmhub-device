@@ -13,9 +13,10 @@
 #include <Sleep.hpp>
 #include <Telemetry.hpp>
 #include <commands/EchoCommand.hpp>
-#include <commands/PingCommand.hpp>
 #include <commands/FileCommands.hpp>
 #include <commands/HttpUpdateCommand.hpp>
+#include <commands/PingCommand.hpp>
+#include <commands/ResetWifiCommand.hpp>
 #include <commands/RestartCommand.hpp>
 #include <wifi/WiFiProvider.hpp>
 
@@ -85,11 +86,13 @@ protected:
         , deviceConfig(deviceConfig)
         , appConfig(appConfig)
         , wifiProvider(wifiProvider)
+        , resetWifiCommand(wifiProvider)
         , httpUpdateCommand(version)
         , tasks(maxSleepTime) {
 
         mqtt.registerCommand("echo", echoCommand);
         mqtt.registerCommand("ping", pingCommand);
+        mqtt.registerCommand("resetWifi", resetWifiCommand);
         mqtt.registerCommand("restart", restartCommand);
         mqtt.registerCommand("files/list", fileListCommand);
         mqtt.registerCommand("files/read", fileReadCommand);
@@ -258,6 +261,7 @@ private:
     commands::FileWriteCommand fileWriteCommand;
     commands::FileRemoveCommand fileRemoveCommand;
     commands::HttpUpdateCommand httpUpdateCommand;
+    commands::ResetWifiCommand resetWifiCommand;
     commands::RestartCommand restartCommand;
     commands::PingCommand pingCommand { telemetryPublisher };
 };
