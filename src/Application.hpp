@@ -13,6 +13,7 @@
 #include <Sleep.hpp>
 #include <Telemetry.hpp>
 #include <commands/EchoCommand.hpp>
+#include <commands/PingCommand.hpp>
 #include <commands/FileCommands.hpp>
 #include <commands/HttpUpdateCommand.hpp>
 #include <commands/RestartCommand.hpp>
@@ -88,6 +89,7 @@ protected:
         , tasks(maxSleepTime) {
 
         mqtt.registerCommand("echo", echoCommand);
+        mqtt.registerCommand("ping", pingCommand);
         mqtt.registerCommand("restart", restartCommand);
         mqtt.registerCommand("files/list", fileListCommand);
         mqtt.registerCommand("files/read", fileReadCommand);
@@ -237,13 +239,6 @@ private:
     DeviceConfiguration& deviceConfig;
     AppConfiguration& appConfig;
     WiFiProvider& wifiProvider;
-    commands::EchoCommand echoCommand;
-    commands::FileListCommand fileListCommand;
-    commands::FileReadCommand fileReadCommand;
-    commands::FileWriteCommand fileWriteCommand;
-    commands::FileRemoveCommand fileRemoveCommand;
-    commands::HttpUpdateCommand httpUpdateCommand;
-    commands::RestartCommand restartCommand;
 
 public:
     TaskContainer tasks;
@@ -256,6 +251,15 @@ public:
 private:
     OtaHandler otaHandler { tasks };
     ReportWakeUpHandler wakeUpHandler { sleep, mqtt, name, version, deviceConfig };
+
+    commands::EchoCommand echoCommand;
+    commands::FileListCommand fileListCommand;
+    commands::FileReadCommand fileReadCommand;
+    commands::FileWriteCommand fileWriteCommand;
+    commands::FileRemoveCommand fileRemoveCommand;
+    commands::HttpUpdateCommand httpUpdateCommand;
+    commands::RestartCommand restartCommand;
+    commands::PingCommand pingCommand { telemetryPublisher };
 };
 
 }}    // namespace farmhub::client
