@@ -61,7 +61,7 @@ private:
     HeldButtonListener resetWifi { tasks, "Reset WIFI", seconds { 5 },
         [&]() {
             Serial.println("Resetting WIFI settings");
-            wifiProvider.wm.resetSettings();
+            wifiProvider.resetSettings();
 
             // Blink the LED once for a second
             bool wasEnabled = led.isEnabled();
