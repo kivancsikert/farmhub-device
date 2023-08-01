@@ -92,7 +92,7 @@ protected:
 
         mqtt.registerCommand("echo", echoCommand);
         mqtt.registerCommand("ping", pingCommand);
-        mqtt.registerCommand("resetWifi", resetWifiCommand);
+        mqtt.registerCommand("reset-wifi", resetWifiCommand);
         mqtt.registerCommand("restart", restartCommand);
         mqtt.registerCommand("files/list", fileListCommand);
         mqtt.registerCommand("files/read", fileReadCommand);
