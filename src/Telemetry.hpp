@@ -49,7 +49,7 @@ public:
         for (auto& provider : providers) {
             provider.get().populateTelemetry(root);
         }
-        mqtt.publish(topic, doc);
+        mqtt.publish(topic, doc, MqttHandler::Retention::NoRetain, MqttHandler::QoS::AtLeastOnce);
     }
 
 private:

@@ -24,7 +24,8 @@ using namespace std::chrono;
 namespace farmhub { namespace client {
 
 class MqttHandler
-    : public BaseTask, public BaseSleepListener {
+    : public BaseTask,
+      public BaseSleepListener {
 public:
     class Config : public NamedConfigurationSection {
     public:
@@ -38,8 +39,15 @@ public:
         Property<String> topic { this, "topic", "" };
     };
 
-    enum class RetainType {
-        NoRetain, Retain
+    enum class Retention {
+        NoRetain,
+        Retain
+    };
+
+    enum class QoS {
+        AtMostOnce = 0,
+        AtLeastOnce = 1,
+        ExactlyOnce = 2
     };
 
     MqttHandler(TaskContainer& tasks, MdnsHandler& mdns, SleepHandler& sleep, Configuration& appConfig)
@@ -91,7 +99,7 @@ public:
                         auto response = responseDoc.to<JsonObject>();
                         handler.handle(request, response);
                         if (response.size() > 0) {
-                            publish("responses/" + command, responseDoc);
+                            publish("responses/" + command, responseDoc, Retention::NoRetain, QoS::ExactlyOnce);
                         }
                         return;
                     }
@@ -104,11 +112,11 @@ public:
         mqttClient.begin(client);
     }
 
-    bool publish(const String& suffix, const JsonDocument& json, RetainType retain = RetainType::NoRetain, int qos = 0) {
+    bool publish(const String& suffix, const JsonDocument& json, Retention retain = Retention::NoRetain, QoS qos = QoS::AtMostOnce) {
         String fullTopic = topic + "/" + suffix;
 #ifdef DUMP_MQTT
         Serial.printf("Queuing MQTT topic '%s'%s (qos = %d): ",
-            fullTopic.c_str(), (retain == RetainType::Retain ? " (retain)" : ""), qos);
+            fullTopic.c_str(), (retain == Retention::Retain ? " (retain)" : ""), qos);
         serializeJsonPretty(json, Serial);
         Serial.println();
 #endif
@@ -119,7 +127,7 @@ public:
         return storedWithoutDropping;
     }
 
-    bool publish(const String& suffix, std::function<void(JsonObject&)> populate, RetainType retain = RetainType::NoRetain, int qos = 0, int size = MQTT_BUFFER_SIZE) {
+    bool publish(const String& suffix, std::function<void(JsonObject&)> populate, Retention retain = Retention::NoRetain, QoS qos = QoS::AtMostOnce, int size = MQTT_BUFFER_SIZE) {
         DynamicJsonDocument doc(size);
         JsonObject root = doc.to<JsonObject>();
         populate(root);
@@ -129,7 +137,7 @@ public:
     void flush() {
         while (!publishQueue.isEmpty()) {
             const MqttMessage& message = publishQueue.pop();
-            bool success = mqttClient.publish(message.topic, message.payload, message.retain == RetainType::Retain, message.qos);
+            bool success = mqttClient.publish(message.topic, message.payload, message.retain == Retention::Retain, static_cast<int>(message.qos));
 #ifdef DUMP_MQTT
             Serial.printf("Published to '%s' (size: %d)\n", message.topic.c_str(), message.payload.length());
 #endif
@@ -140,13 +148,13 @@ public:
         }
     }
 
-    bool subscribe(const String& suffix, int qos) {
+    bool subscribe(const String& suffix, QoS qos) {
         if (!mqttClient.connected()) {
             return false;
         }
         String fullTopic = topic + "/" + suffix;
         Serial.printf("Subscribing to MQTT topic '%s' with QOS = %d\n", fullTopic.c_str(), qos);
-        bool success = mqttClient.subscribe(fullTopic.c_str(), qos);
+        bool success = mqttClient.subscribe(fullTopic.c_str(), static_cast<int>(qos));
         if (!success) {
             Serial.printf("Error subscribing to MQTT topic '%s', error = %d\n",
                 fullTopic.c_str(), mqttClient.lastError());
@@ -241,9 +249,9 @@ private:
         Serial.println(" connected");
 
         // Set QoS to 1 (ack) for configuration messages
-        subscribe("config", 1);
+        subscribe("config", QoS::ExactlyOnce);
         // QoS 0 (no ack) for commands
-        subscribe("commands/#", 0);
+        subscribe("commands/#", QoS::ExactlyOnce);
         return true;
     }
 
@@ -276,11 +284,11 @@ private:
         MqttMessage()
             : topic("")
             , payload("")
-            , retain(RetainType::NoRetain)
-            , qos(0) {
+            , retain(Retention::NoRetain)
+            , qos(QoS::AtMostOnce) {
         }
 
-        MqttMessage(const String& topic, const JsonDocument& payload, RetainType retain, int qos)
+        MqttMessage(const String& topic, const JsonDocument& payload, Retention retain, QoS qos)
             : topic(topic)
             , retain(retain)
             , qos(qos) {
@@ -289,8 +297,8 @@ private:
 
         String topic;
         String payload;
-        RetainType retain;
-        int qos;
+        Retention retain;
+        QoS qos;
     };
 
     CircularBuffer<MqttMessage, MQTT_QUEUED_MESSAGES_MAX> publishQueue;
