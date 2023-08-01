@@ -21,10 +21,12 @@ public:
         TaskContainer& tasks,
         MqttHandler& mqtt,
         milliseconds interval,
-        const String& topic = "telemetry")
+        const String& topic = "telemetry",
+        const MqttHandler::QoS qos = MqttHandler::QoS::AtLeastOnce)
         : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
-        , topic(topic) {
+        , topic(topic)
+        , qos(qos) {
     }
 
     template <typename Duration>
@@ -32,10 +34,12 @@ public:
         TaskContainer& tasks,
         MqttHandler& mqtt,
         Property<Duration>& interval,
-        const String& topic = "telemetry")
+        const String& topic = "telemetry",
+        const MqttHandler::QoS qos = MqttHandler::QoS::AtLeastOnce)
         : IntervalTask(tasks, "Publish telemetry", interval, [&]() { publish(); })
         , mqtt(mqtt)
-        , topic(topic) {
+        , topic(topic)
+        , qos(qos) {
     }
 
     void registerProvider(TelemetryProvider& provider) {
@@ -49,12 +53,14 @@ public:
         for (auto& provider : providers) {
             provider.get().populateTelemetry(root);
         }
-        mqtt.publish(topic, doc);
+        mqtt.publish(topic, doc, MqttHandler::Retention::NoRetain, qos);
     }
 
 private:
     MqttHandler& mqtt;
     const String topic;
+    const MqttHandler::QoS qos;
+
     std::list<std::reference_wrapper<TelemetryProvider>> providers;
 };
 
