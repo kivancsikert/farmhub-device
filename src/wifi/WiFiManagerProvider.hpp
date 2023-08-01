@@ -41,6 +41,10 @@ public:
 
     WiFiManager wm;
 
+    void resetSettings() {
+        wm.resetSettings();
+    }
+
 protected:
     const seconds connectionTimeout;
     const seconds configurationTimeout;
