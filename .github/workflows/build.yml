@@ -34,7 +34,7 @@ jobs:
                   pip install --upgrade platformio
             - name: Build application (${{matrix.environment}})
               if: matrix.environment != 'native'
-              run: pio run --environment ${{matrix.environment}}
+              run: pio run --project-dir ugly-duckling --environment ${{matrix.environment}}
             - name: Rename firmware artifact
               if: matrix.environment != 'native'
               run: cp ${{ github.workspace }}/.pio/build/${{ matrix.environment }}/firmware.bin firmware-${{ matrix.environment }}.bin
@@ -44,14 +44,9 @@ jobs:
               with:
                   path: firmware-${{ matrix.environment }}.bin
                   if-no-files-found: error
-            # - name: Install native platform
-            #   if: matrix.environment == 'native'
-            #   run: |
-            #       # Required before PlatformIO 5.2.0 - https://github.com/platformio/platformio-core/issues/3901
-            #       pio platform install native
             - name: Run unit tests
               if: matrix.environment == 'native'
-              run: pio test --environment native
+              run: pio test --project-dir ugly-duckling --environment native
     release:
         needs: build
         if: startsWith(github.ref, 'refs/tags/')
