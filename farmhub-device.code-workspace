@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"name": "farmhub-device",
+			"path": "."
+		},
+		{
+			"name": "farmhub-client",
+			"path": "farmhub-client"
+		},
+		{
+			"name": "ugly-duckling",
+			"path": "ugly-duckling"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.json": "json",
+			"functional": "cpp",
+			"chrono": "cpp",
+			"*.tpp": "cpp",
+			"string_view": "cpp"
+		},
+		"cSpell.words": [
+			"bblanchon",
+			"rlogiacco"
+		]
+	}
+}
