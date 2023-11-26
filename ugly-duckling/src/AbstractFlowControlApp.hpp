@@ -81,7 +81,7 @@ class AbstractFlowControlApp
 public:
     AbstractFlowControlApp(
         AbstractFlowControlDeviceConfig& deviceConfig, ValveController& valveController)
-        : Application("flow-control", VERSION, deviceConfig, config, wifiProvider)
+        : Application("ugly-duckling", VERSION, deviceConfig, config, wifiProvider)
         , deviceConfig(deviceConfig)
         , valve(tasks, mqtt, events, valveController) {
         telemetryPublisher.registerProvider(flowMeter);
