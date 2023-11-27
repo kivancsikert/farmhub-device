@@ -3,7 +3,9 @@ on:
     push:
     release:
         types: [published]
+
 jobs:
+
     build:
         runs-on: ubuntu-latest
         strategy:
@@ -14,39 +16,43 @@ jobs:
             - uses: actions/checkout@v3
               with:
                   fetch-depth: 0
-            - name: Cache pip
-              uses: actions/cache@v3
-              with:
-                  path: ~/.cache/pip
-                  key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pip-
+
             - name: Cache PlatformIO
               uses: actions/cache@v3
               with:
-                  path: ~/.platformio
-                  key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+                  path: |
+                      ~/.cache/pip
+                      ~/.platformio/.cache
+                  key: ${{ runner.os }}-pio
+
             - name: Set up Python
-              uses: actions/setup-python@v3
+              uses: actions/setup-python@v4
+              with:
+                  python-version: '3.9'
+
             - name: Install PlatformIO
               run: |
-                  python -m pip install --upgrade pip
                   pip install --upgrade platformio
+
             - name: Build application (${{matrix.environment}})
               if: matrix.environment != 'native'
               run: pio run --project-dir ugly-duckling --environment ${{matrix.environment}}
+
             - name: Rename firmware artifact
               if: matrix.environment != 'native'
-              run: cp ${{ github.workspace }}/.pio/build/${{ matrix.environment }}/firmware.bin firmware-${{ matrix.environment }}.bin
+              run: cp ${{ github.workspace }}/ugly-duckling/.pio/build/${{ matrix.environment }}/firmware.bin ugly-duckling-${{ matrix.environment }}.bin
+
             - name: Upload firmware artifact
               if: matrix.environment != 'native'
               uses: "actions/upload-artifact@v3"
               with:
-                  path: firmware-${{ matrix.environment }}.bin
+                  path: ugly-duckling-${{ matrix.environment }}.bin
                   if-no-files-found: error
+
             - name: Run unit tests
               if: matrix.environment == 'native'
               run: pio test --project-dir ugly-duckling --environment native
+
     release:
         needs: build
         if: startsWith(github.ref, 'refs/tags/')
@@ -54,12 +60,15 @@ jobs:
         steps:
             - name: Download artifacts
               uses: actions/download-artifact@v3
+
             - name: Display structure of downloaded files
               run: ls -R
+
             - name: Release
               uses: softprops/action-gh-release@v1
               with:
                   files: artifact/*
+
     ready-to-merge:
         needs: build
         if: ${{ github.ref != 'refs/heads/main' }}
