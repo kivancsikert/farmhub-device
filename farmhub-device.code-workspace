@@ -19,7 +19,21 @@
 			"functional": "cpp",
 			"chrono": "cpp",
 			"*.tpp": "cpp",
-			"string_view": "cpp"
+			"string_view": "cpp",
+			"array": "cpp",
+			"*.tcc": "cpp",
+			"deque": "cpp",
+			"list": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"vector": "cpp",
+			"memory": "cpp",
+			"random": "cpp",
+			"format": "cpp",
+			"mutex": "cpp",
+			"span": "cpp",
+			"initializer_list": "cpp"
 		},
 		"cSpell.words": [
 			"bblanchon",
