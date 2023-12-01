@@ -210,7 +210,6 @@ private:
     bool tryConnect() {
         // Lookup host name via MDNS explicitly
         // See https://github.com/kivancsikert/chicken-coop-door/issues/128
-        const String& hostname = hostname;
         if (hostname.isEmpty()) {
             bool found = mdns.withService(
                 "mqtt", "tcp",
